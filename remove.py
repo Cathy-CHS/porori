@@ -13,7 +13,8 @@ def write_file(file_name, data):
 # 파일 처리 함수
 def process_text(file_name, output_file_name):
     text = read_file(file_name)  # 파일에서 텍스트 읽기
-    processed_text = re.sub('[^a-zA-Z0-9ㄱ-ㅣ가-힣., ]', '', text)  # 정규 표현식으로 텍스트 처리
+    processed_text = re.sub(r'\b0\d{2}\b', '', text)
+    processed_text = re.sub('[^a-zA-Z0-9ㄱ-ㅣ가-힣., "]', '', text)  # 정규 표현식으로 텍스트 처리
     write_file(output_file_name, processed_text)  # 결과를 새 파일에 저장
 
 # 실행 코드
