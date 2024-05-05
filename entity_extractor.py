@@ -84,7 +84,9 @@ if __name__ == "__main__":
     
     for e in entities:
         print(e)
+        
     print('---------------------------------')
+    
     for e in result:
         # print(e)
         out.write(str(e)+"\n")
