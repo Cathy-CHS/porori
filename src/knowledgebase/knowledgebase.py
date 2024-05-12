@@ -1,7 +1,7 @@
 import os
 import requests
 from entity import Entity
-
+from typing import List
 
 AVAILABLE_KNOWLEDGE_BASES = ["encykorea-api"]  # TODO: Add encykorea-local
 
@@ -130,5 +130,31 @@ class Knowledgebase:
 
         Returns:
             [Entity]:
+        """
+        pass
+
+    def classify_entity_candidate(self, entity: Entity, candidates: List[Entity]):
+        """
+        Classify the entity candidate based on the context of the entity.
+
+        Args:
+            entity (Entity): Detected entity from the text.
+            candidates ([Entity]): List of candidate entities from the knowledge base.
+
+        Returns:
+            Entity: The classified entity from the candidates.
+        """
+        pass
+
+    def link_entity(self, entity: Entity):
+        """
+        Link the entity to the knowledge base.
+
+        Args:
+            entity (Entity): Detected entity from the text.
+
+        Returns:
+            Entity: The linked entity from the knowledge base.
+            linked_entity (KnowledgeBaseEntity): The linked entity from the knowledge base.
         """
         pass
