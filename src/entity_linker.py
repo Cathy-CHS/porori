@@ -13,7 +13,9 @@ knowledgebases = {
 
 class Hodu:
     """
-    Entity Linker class for linking entities to the knowledge base.
+    Entity Linker class for linking entities to the knowledge base. This is pipeline
+    class for entity linking. It supprots knowledgebase loading, candidate generation,
+    and candidate classification.
     """
 
     def __init__(self, knowledgebase="encykorea"):
