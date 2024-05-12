@@ -69,6 +69,7 @@ class EncyKoreaAPIEntity(KnowledgeBaseEntity):
                 ) from e
 
         self.access_key = access_key
+        self._get_content()
 
     def get_context(self):
         """
@@ -111,14 +112,23 @@ class EncyKoreaAPIEntity(KnowledgeBaseEntity):
 
 
 class Knowledgebase:
-    def __init__(self, knowledgebase="encykorea-api"):
-        # Initialize Knowledge base
-        # Health Check for the knowledge base connection.
+    def __init__(self, knowledgebase="encykorea-api", max_candidates=5):
+        """
+        Initialize the knowledge base.
+
+        Args:
+            knowledgebase (str, optional): Type of knowledgebase. Defaults to "encykorea-api".
+            max_candidates (int, optional): The maximum number of candidate entities. Defaults to 5.
+
+        Raises:
+            ValueError: If the knowledge base is not found in the available knowledge bases.
+        """
 
         if knowledgebase not in AVAILABLE_KNOWLEDGE_BASES:
             raise ValueError(f"Knowledge base {knowledgebase} not found.")
 
         self.knowledgebase_name = knowledgebase
+        self.max_candidates = max_candidates
 
     def generate_candidates(self, entity: Entity):
         """
@@ -133,28 +143,52 @@ class Knowledgebase:
         """
         pass
 
-    def classify_entity_candidate(self, entity: Entity, candidates: List[Entity]):
-        """
-        Classify the entity candidate based on the context of the entity.
 
+class EncyKoreaAPIKnowledgeBase(Knowledgebase):
+    def __init__(self, max_candidates=5, access_key=None):
+        super().__init__("encykorea-api")
+
+        if access_key is None:
+            try:
+                access_key = os.getenv("ENCYKOREA_API_KEY")
+            except Exception as e:
+                raise ValueError(
+                    "Access key for EncyKorea API not provided or found in the environment."
+                ) from e
+
+        self.access_key = access_key
+
+    def generate_candidates(self, entity: Entity) -> List[EncyKoreaAPIEntity]:
+        """
+        Generate candidates for entity linking from the EncyKorea API.
+
+        항목 검색
+        GET https://suny.aks.ac.kr:5143/api/Article/Search/{검색어}?page={페이지}&field={분야}&type={유형}
         Args:
-            entity (Entity): Detected entity from the text.
-            candidates ([Entity]): List of candidate entities from the knowledge base.
+            entity (Entity): Detected entity from the text. Need to be linked to an
+            entity in the knowledgebase.
 
         Returns:
-            Entity: The classified entity from the candidates.
+            List[EncyKoreaAPIEntity]: List of candidate entities.
         """
-        pass
+        url = f"https://suny.aks.ac.kr:5143/api/Article/Search/{entity.name}?page=1"
+        headers = {"accessKey": self.access_key}
+        response = requests.get(url, headers=headers, timeout=5)
 
-    def link_entity(self, entity: Entity):
-        """
-        Link the entity to the knowledge base.
+        if response.status_code != 200:
+            raise ValueError(
+                f"Failed to get candidates for {entity.name} from EncyKorea API."
+            )
 
-        Args:
-            entity (Entity): Detected entity from the text.
+        data = response.json()
+        entities = []
 
-        Returns:
-            Entity: The linked entity from the knowledge base.
-            linked_entity (KnowledgeBaseEntity): The linked entity from the knowledge base.
-        """
-        pass
+        for item in data["articles"]:
+            entity = EncyKoreaAPIEntity(
+                name=item["headword"], entity_id=item["eid"], access_key=self.access_key
+            )
+            entities.append(entity)
+            if len(entities) >= self.max_candidates:
+                break
+
+        return entities
