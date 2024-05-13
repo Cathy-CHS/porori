@@ -1,1 +1,4 @@
 transformers
+datasets
+playwright
+beautifulsoup4
