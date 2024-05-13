@@ -10,30 +10,59 @@ class Dotori:
         self.max_tokens = max_tokens
         self.processed_entities = []
 
+    # def extract_entities(self, text):
+    #     # 문장으로 나누기
+    #     sentences = re.split(r'(?<=[.!?])\s+', text)
+        
+    #     # token화 하기 전 원본 문장의 길이를 저장하기 위한 변수
+    #     start_positions = []
+    #     end_positions = []
+    #     offset = 0
+        
+    #     # 문장의 시작, 끝 위치 계산
+    #     for sentence in sentences:
+    #         start_positions.append(offset)
+    #         end_positions.append(offset + len(sentence))
+    #         offset += len(sentence) + 1 
+
+    #     entities = []
+    #     for start, end in zip(start_positions, end_positions):
+    #         sentence_text = text[start:end]
+    #         sentence_entities = self.pipe(sentence_text)
+    #         for entity in sentence_entities:
+    #             # 시작, 끝 위치 조정
+    #             entity['start'] += start
+    #             entity['end'] += start
+    #             entities.append(entity)
+        
+    #     return entities
+    
     def extract_entities(self, text):
         # 문장으로 나누기
         sentences = re.split(r'(?<=[.!?])\s+', text)
+        chunks = []
+        current_chunk = []
+        current_length = 0
         
-        # token화 하기 전 원본 문장의 길이를 저장하기 위한 변수
-        start_positions = []
-        end_positions = []
-        offset = 0
-        
-        # 문장의 시작, 끝 위치 계산
+        # 문장들을 적절한 크기의 청크로 합치기
         for sentence in sentences:
-            start_positions.append(offset)
-            end_positions.append(offset + len(sentence))
-            offset += len(sentence) + 1 
-
+            tokens = self.tokenizer.tokenize(sentence)
+            num_tokens = len(tokens)
+            if current_length + num_tokens > self.max_tokens or len(current_chunk) >= 3:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = [sentence]
+                current_length = num_tokens
+            else:
+                current_chunk.append(sentence)
+                current_length += num_tokens
+        # 마지막 청크 추가
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
+        
         entities = []
-        for start, end in zip(start_positions, end_positions):
-            sentence_text = text[start:end]
-            sentence_entities = self.pipe(sentence_text)
-            for entity in sentence_entities:
-                # 시작, 끝 위치 조정
-                entity['start'] += start
-                entity['end'] += start
-                entities.append(entity)
+        for chunk in chunks:
+            chunk_entities = self.pipe(chunk)
+            entities.extend(chunk_entities)
         
         return entities
 
