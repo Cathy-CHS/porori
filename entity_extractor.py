@@ -43,6 +43,7 @@ class Dotori:
         chunks = []
         current_chunk = []
         current_length = 0
+        # sentence_start_index = 0
         
         # 문장들을 적절한 크기의 청크로 합치기
         for sentence in sentences:
