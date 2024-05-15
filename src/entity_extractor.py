@@ -1,8 +1,8 @@
 import re
 from transformers import AutoTokenizer, pipeline
-from src.entity import Entity
+from entity import Entity
 class Dotori:
-    def __init__(self,  max_tokens=1000):
+    def __init__(self, max_tokens=512):
         # load Roberta Entity Recognition model
         # Use a pipeline as a high-level helper
         self.pipe = pipeline("token-classification", model="yongsun-yoon/klue-roberta-base-ner")
@@ -10,66 +10,73 @@ class Dotori:
         self.max_tokens = max_tokens
         self.processed_entities = []
 
+    # def extract_entities(self, text):
+    #     # 문장으로 나누기
+    #     sentences = re.split(r'(?<=[.!?])\s+', text)
+        
+    #     # token화 하기 전 원본 문장의 길이를 저장하기 위한 변수
+    #     start_positions = []
+    #     end_positions = []
+    #     offset = 0
+        
+    #     # 문장의 시작, 끝 위치 계산
+    #     for sentence in sentences:
+    #         start_positions.append(offset)
+    #         end_positions.append(offset + len(sentence))
+    #         offset += len(sentence) + 1 
+
+    #     entities = []
+    #     for start, end in zip(start_positions, end_positions):
+    #         sentence_text = text[start:end]
+    #         sentence_entities = self.pipe(sentence_text)
+    #         for entity in sentence_entities:
+    #             # 시작, 끝 위치 조정
+    #             entity['start'] += start
+    #             entity['end'] += start
+    #             entities.append(entity)
+        
+    #     return entities
+    
     def extract_entities(self, text):
-        # Split text into sentences using regex
+        # 문장으로 나누기
         sentences = re.split(r'(?<=[.!?])\s+', text)
+        chunks = []
+        current_chunk = []
+        current_length = 0
         
-        entities = []
+        # 문장들을 적절한 크기의 청크로 합치기
         for sentence in sentences:
-            sentence_entities = self.pipe(sentence)
-            entities.extend(sentence_entities)
-
-        return entities
-        
-    def _extract_entities(self, text):
-        # Split text into sentences using regex
-        sentences = re.split(r'(?<=[.!?])\s+', text)
-        
-        # Tokenize each sentence
-        tokenized_sentences = [self.tokenizer.tokenize(sentence) for sentence in sentences]
-        
-        # Combine tokenized sentences into sequences
-        start_index_per_sequence = [0]
-        sequences = []
-        current_sequence = []
-        current_sentence_length = 0
-        for i, sentence in enumerate(tokenized_sentences):
-            if len(current_sequence) + len(sentence) <= self.max_tokens:
-                current_sequence.extend(sentence)
-                current_sentence_length += len(sentences[i])
+            tokens = self.tokenizer.tokenize(sentence)
+            num_tokens = len(tokens)
+            if current_length + num_tokens > self.max_tokens or len(current_chunk) >= 3:
+                chunks.append(" ".join(current_chunk))
+                current_chunk = [sentence]
+                current_length = num_tokens
             else:
-                sequences.append(current_sequence)
-                start_index_per_sequence.append(current_sentence_length)
-                
-                current_sequence = sentence
-                current_sentence_length += len(sentences[i])
-                
-        if current_sequence:
-            sequences.append(current_sequence)
-            start_index_per_sequence.append(current_sentence_length)
+                current_chunk.append(sentence)
+                current_length += num_tokens
+        # 마지막 청크 추가
+        if current_chunk:
+            chunks.append(" ".join(current_chunk))
         
-        # Perform entity recognition on each sequence
         entities = []
+        current_text_position = 0
+        for chunk in chunks:
+            chunk_entities = self.pipe(chunk)
+            # entities.extend(chunk_entities)
+            entities.extend({
+                'entity': entity['entity'],
+                'word': entity['word'],
+                'start': entity['start'] + current_text_position,
+                'end': entity['end'] + current_text_position 
+            } for entity in chunk_entities)
+            current_text_position += len(chunk) + 1
         
-        for i, sequence in enumerate(sequences):
-            sequence_text = self.tokenizer.convert_tokens_to_string(sequence)
-            sequence_entities = self.pipe(sequence_text)
-            start_index = start_index_per_sequence[i]
-            new_entities = []
-            for entity in sequence_entities:
-                e_new = {
-                    'entity': entity['entity'],
-                    'score': entity['score'],
-                    'start': entity['start'] + start_index,
-                    'end': entity['end'] + start_index,
-                    'word': entity['word']
-                }
-                new_entities.append(e_new)
-
-            entities.extend(new_entities)
-
         return entities
     
+    def to_entity(self, entities):
+        return [Entity(entity['entity'], entity['word'], entity['start'], entity['end']) for entity in entities]
+
     def group_chunk(self, entities):
         # I로 시작하는 같은 entity type의 chunk 묶기
         current_group = None
@@ -104,20 +111,22 @@ class Dotori:
 
         return self.processed_entities
     
-                
 
 if __name__ == "__main__":
     out = open("entities_output.txt", 'w', encoding='utf-8')
     f = open("output.txt", 'r', encoding='utf-8')
+    
     text = f.read()
     dotori = Dotori()
     entities = dotori.extract_entities(text)
     result = dotori.group_chunk(entities)
+    
     for e in entities:
         print(e)
+        
     print('---------------------------------')
+    
     for e in result:
-        print(e)
+        # print(e)
         out.write(str(e)+"\n")
-    out.close
-    # /home/codespace/.python/current/bin/python3 /workspaces/porori/entity_extractor.py
+    out.close()
