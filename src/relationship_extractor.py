@@ -2,7 +2,7 @@ from typing import List, Tuple
 from entity import Entity
 from itertools import permutations
 from korre import KorRE
-
+from entity_extractor import Dotori
 
 # https://huggingface.co/docs/transformers/en/model_doc/bert#transformers.BertModel
 class Bono:
@@ -60,3 +60,16 @@ class Bono:
         
         # Convert the relation ID to relation name and map it with entities
         return [(head, tail, rel) for _, _, rel in relations]
+
+if __name__ == "__main__":
+    f = open("output.txt", 'r', encoding='utf-8')
+    input_text = f.read()
+    dotori = Dotori()
+    entity_list = dotori.extract_entities(input_text)
+    entities = dotori.to_entity(entity_list)
+    bono = Bono()
+
+    result = bono.extract(input_text, entities)
+    for e in result:
+        print(e)
+    f.close()
