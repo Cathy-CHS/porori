@@ -1,6 +1,6 @@
 import re
 from transformers import AutoTokenizer, pipeline
-from src.entity import Entity
+from entity import Entity
 class Dotori:
     def __init__(self, max_tokens=512):
         # load Roberta Entity Recognition model
@@ -43,7 +43,6 @@ class Dotori:
         chunks = []
         current_chunk = []
         current_length = 0
-        # sentence_start_index = 0
         
         # 문장들을 적절한 크기의 청크로 합치기
         for sentence in sentences:
@@ -61,12 +60,22 @@ class Dotori:
             chunks.append(" ".join(current_chunk))
         
         entities = []
+        current_text_position = 0
         for chunk in chunks:
             chunk_entities = self.pipe(chunk)
-            entities.extend(chunk_entities)
+            # entities.extend(chunk_entities)
+            entities.extend({
+                'entity': entity['entity'],
+                'word': entity['word'],
+                'start': entity['start'] + current_text_position,
+                'end': entity['end'] + current_text_position 
+            } for entity in chunk_entities)
+            current_text_position += len(chunk) + 1
         
         return entities
-
+    
+    def to_entity(self, entities):
+        return [Entity(entity['entity'], entity['word'], entity['start'], entity['end']) for entity in entities]
 
     def group_chunk(self, entities):
         # I로 시작하는 같은 entity type의 chunk 묶기

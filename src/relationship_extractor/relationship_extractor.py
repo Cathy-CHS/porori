@@ -1,6 +1,7 @@
 from typing import List, Tuple
 from entity import Entity
 from itertools import permutations
+from korre import KorRE
 
 
 # https://huggingface.co/docs/transformers/en/model_doc/bert#transformers.BertModel
