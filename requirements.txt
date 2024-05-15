@@ -2,3 +2,10 @@ transformers
 datasets
 playwright
 beautifulsoup4
+
+easydict
+numpy
+pandas
+requests
+wget
+torch
