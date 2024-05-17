@@ -1,6 +1,8 @@
 .env
 .devcontainer
 .DS_Store
-.src/_pycache_
+.src/__pycache__
+.src/relationship_extractor/__pycache__
 .relations_output.csv
 .relations_output.txt
+.
