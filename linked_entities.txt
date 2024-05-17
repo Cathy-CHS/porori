@@ -1,0 +1,1 @@
+Entity: 태조, ID: E0059033Entity: 공양왕, ID: E0004385

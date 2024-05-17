@@ -171,13 +171,14 @@ class EncyKoreaAPIKnowledgeBase(Knowledgebase):
         Returns:
             List[EncyKoreaAPIEntity]: List of candidate entities.
         """
-        url = f"https://suny.aks.ac.kr:5143/api/Article/Search/{entity.name}?page=1"
+        url = f"https://suny.aks.ac.kr:5143/api/Article/Search/{entity.word}?page=1"
+        print(url)
         headers = {"accessKey": self.access_key}
         response = requests.get(url, headers=headers, timeout=5)
 
         if response.status_code != 200:
             raise ValueError(
-                f"Failed to get candidates for {entity.name} from EncyKorea API."
+                f"Failed to get candidates for {entity.word} from EncyKorea API."
             )
 
         data = response.json()

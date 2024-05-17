@@ -60,6 +60,7 @@ class Hodu:
         """
 
         candidates = self._generate_candidates(entity)
+
         if candidates == None:
             return None
             
