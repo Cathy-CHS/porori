@@ -11,6 +11,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+import json
 
 from dotenv import load_dotenv
 import os
@@ -137,7 +138,31 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
     return messages
 
 
-def get_relationships_from_text(llm, text: str) -> Data:
+def export_data_list_as_json(
+    data_list: List[Data],
+    input_batches: List[str] = None,
+    output_path="rel_ext_data.json",
+):
+    res = {"data": []}
+    for i, data in enumerate(data_list):
+        dict_data = {
+            "entities": data.entities_list,
+            "relationships": [
+                (rel.head, rel.tail, rel.relationship) for rel in data.relationship_list
+            ],
+            "input_text": input_batches[i] if input_batches else None,
+        }
+        res["data"].append(dict_data)
+    with open(output_path, "w", encoding="UTF-8-sig") as f:
+        json.dump(
+            res,
+            f,
+            ensure_ascii=False,
+            indent=4,
+        )
+
+
+def get_relationships_from_text(llm, texts: List[str]) -> Data:
     examples = [
         (
             """
@@ -301,8 +326,9 @@ def get_relationships_from_text(llm, text: str) -> Data:
         method="function_calling",
         include_raw=False,
     )
+
     with get_openai_callback() as cb:
-        res = runnable.invoke({"input": text, "examples": messages})
+        res = runnable.batch([{"input": text, "examples": messages} for text in texts])
         print(cb)
     return res
 
@@ -310,9 +336,9 @@ def get_relationships_from_text(llm, text: str) -> Data:
 def main():
 
     # Testing the prompt
-    human_input = """
-        사간원에서 김덕원의 일을 아뢰니, 그대로 따랐다. 우의정 민정중이 하루 전에 입시하여 말하다가, 김덕원의 일에 미치자 임금에게 빨리 대간이 아뢴 대로 따를 것을 권하고, 또 아뢰기를,"김덕원이 부지런하고 성실하여 직책을 잘 수행했다는 칭찬이 조금 있으니, 성상께서 대간의 아룀을 윤허하지 않으심은, 진실로 인재를 사랑하고 아끼는 뜻에서 나왔겠지만, 공의가 이미 발표된 뒤에는 또한 시비를 명백히 하여 악을 징계하고 선을 장려하는 터전을 삼지 않을 수 없습니다.
-    """
+    # human_input = """
+    #     사간원에서 김덕원의 일을 아뢰니, 그대로 따랐다. 우의정 민정중이 하루 전에 입시하여 말하다가, 김덕원의 일에 미치자 임금에게 빨리 대간이 아뢴 대로 따를 것을 권하고, 또 아뢰기를,"김덕원이 부지런하고 성실하여 직책을 잘 수행했다는 칭찬이 조금 있으니, 성상께서 대간의 아룀을 윤허하지 않으심은, 진실로 인재를 사랑하고 아끼는 뜻에서 나왔겠지만, 공의가 이미 발표된 뒤에는 또한 시비를 명백히 하여 악을 징계하고 선을 장려하는 터전을 삼지 않을 수 없습니다.
+    # """
 
     # We will be using tool calling mode, which
     # requires a tool calling capable model.
@@ -326,14 +352,27 @@ def main():
         api_key=os.getenv("OPENAI_API_KEY"),
     )
 
-    res = get_relationships_from_text(llm, human_input)
-
-    print(type(res))
-    print(res)
-
     # 태조 실록 쭉 읽어오기
     # 3문장 정도씩 끊기
     # 결과 모아서 저장하기
+
+    txt_path = "src/output.txt"
+    input_batches = []
+    num_sentences_per_batch = 8
+    with open(txt_path, "r", encoding="utf-8") as f:
+        text = f.read()
+        sentences = text.split(".")
+        print(sentences)
+        for i in range(0, len(sentences), num_sentences_per_batch):
+            input_batches.append(
+                ".".join(
+                    sentences[i : min(i + num_sentences_per_batch, len(sentences))]
+                )
+            )
+
+    res = get_relationships_from_text(llm, input_batches)
+    export_data_list_as_json(res, input_batches, "src/rel_ext_data.json")
+    print(res)
 
 
 if __name__ == "__main__":
