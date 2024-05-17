@@ -17,7 +17,7 @@ def main():
     # 3. generate knowledge graph
     # out = open("relations_output.txt", "w", encoding="utf-8")
     # 한자 제거
-    input_file = 'input.txt'
+    input_file = 'src/input.txt'
     neoburi = NeoBuri(input_file)
     neoburi.process_text()
 
