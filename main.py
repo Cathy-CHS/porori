@@ -7,49 +7,55 @@ from entity import Entity
 from itertools import permutations
 from relationship_extractor.korre import KorRE
 from entity_extractor import Dotori
-import pandas as pd
 from remove import NeoBuri
+from entity_linker.entity_linker import Hodu
+from knowledgebase.knowledgebase import EncyKoreaAPIEntity
+from dotenv import load_dotenv
 
-
+load_dotenv()
 def main():
     # 1. load KB
     # 2. load siloc document
     # 3. generate knowledge graph
-    # out = open("relations_output.txt", "w", encoding="utf-8")
-    # 한자 제거
+
+    # 1. 한자 제거
     input_file = 'input.txt'
     neoburi = NeoBuri(input_file)
-    neoburi.process_text()
+    processed_text = neoburi.process_text()
 
-    # f = open("src/output.txt", "r", encoding="utf-8")
-    # input_text = f.read()
-    # dotori = Dotori()
-    # entity_list = dotori.extract_entities(input_text)
-    # grouped = dotori.group_chunk(entity_list)
-    # filtered = dotori.filter_type(grouped)
-    # entities = dotori.to_entity(filtered)
-    # bono = Bono()
+    # 2. Entity extraction
+    dotori = Dotori()
+    entities = dotori.extract_entities(processed_text, True)
 
-    # result = bono.extract(input_text, entities)
+    # 3. Entity linking
+    kb = EncyKoreaAPIEntity()
+    linked_entities = []
 
-    # stringed_result = []
-    # heads = []
-    # tails = []
-    # relations = []
-    # for e in result:
-    #     heads.append(e[0])
-    #     tails.append(e[1])
-    #     relations.append(e[2])
-    #     # out.write(str(e[0]), str(e[1]), e[2] + "\n")
-    #     print(str(e[0]), str(e[1]), e[2])
-    #     print(e)
+    hodu = Hodu(kb)
+    for e in entities:
+        result = hodu.get_id(e)
 
-    # stringe_result_df = pd.DataFrame(
-    #     {"head": heads, "tail": tails, "relation": relations}
-    # )
-    # stringe_result_df.to_csv("relations_output.csv", index=False)
-    # f.close()
-    # # out.close()
+        for linked_entity in linked_entities:
+            if linked_entity.entity_id == result.entity_id:
+                existing_entity = linked_entity
+                break
+    
+        if not existing_entity:
+            new_entity = Linked_Entity(result.name, result.entity_id)
+            new_entity.add_item(e['start'], e['end'])
+            linked_entities.append(new_entity)
+        else:
+            existing_entity.add_item(e['start'], e['end'])
+
+        # result는 EncyKoreaAPIEntity(name=item["headword"], entity_id=item["eid"], access_key=self.access_key) 로 반환
+        # 만약에 hodu.get_id로 나온 result의 entity_id가 Linked_Entity 중에 존재하지 않으면 Linked_Entity 생성
+        # e를 Linked_Entity의 items에 start, end index와 함께 넣어주기
+        # Linked_Entity(name, id, item)
+    print(linked_entities)
+    # 4. Relation Extraction
+    #bono = Bono()
+    #result = bono.relation_extract(processed_text, linked_entities)
+
 
 
 if __name__ == "__main__":

@@ -8,6 +8,17 @@ class Entity:
         self.start = start
         self.end = end
         self.uri = uri
+        self.items = []
 
     def __str__(self) -> str:
         return f"Entity: {self.entity}, Word: {self.word}, Start: {self.start}, End: {self.end}"
+
+class Linked_Entity:
+    def __init__(self, name, entity_id):
+        self.name = name
+        self.entity_id = entity_id
+        self.items = []
+
+    def add_item(self, start, end):
+        self.items.append({"start": start, "end": end})
+

@@ -25,7 +25,10 @@ class NeoBuri:
         output = open(self.output_file, 'w', encoding='utf-8')
         output.write(processed_text)
         print("처리가 완료되었습니다. 결과는 {} 파일에 저장되었습니다.".format(self.output_file))
+        input.close()
         # write_file(output_file_name, processed_text)  # 결과를 새 파일에 저장
+
+        return processed_text
 
 # # 실행 코드
 # input_file_name = 'input.txt'  # 입력 파일 이름 지정
