@@ -9,7 +9,6 @@ import json
 import requests
 import wget
 
-
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -19,7 +18,6 @@ from itertools import permutations
 from transformers import BertTokenizer
 from transformers import logging
 from .model import KREModel
-
 
 class KorRE:
     def __init__(self):

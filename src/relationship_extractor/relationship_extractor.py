@@ -5,7 +5,6 @@ from .korre import KorRE
 from entity_extractor import Dotori
 from tqdm import tqdm
 
-
 # https://huggingface.co/docs/transformers/en/model_doc/bert#transformers.BertModel
 class Bono:
     def __init__(self):
