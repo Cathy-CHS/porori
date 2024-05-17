@@ -5,7 +5,6 @@ from .korre import KorRE
 from entity_extractor import Dotori
 from tqdm import tqdm
 
-
 # https://huggingface.co/docs/transformers/en/model_doc/bert#transformers.BertModel
 class Bono:
     def __init__(self):
@@ -47,7 +46,7 @@ class Bono:
                 if relation:
                     result_relations.extend(relation)
 
-            sentence_start_idx = sentence_end_idx + 1
+            sentence_start_idx = sentence_end_idx + 2
 
         return result_relations
 

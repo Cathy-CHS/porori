@@ -1,6 +1,5 @@
 from typing import List, Union
 
-
 class Entity:
     def __init__(self, entity: str, word: str, start: int, end: int, uri=None) -> None:
 
