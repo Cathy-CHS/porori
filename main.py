@@ -3,13 +3,13 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 from relationship_extractor.relationship_extractor import Bono
 from typing import List, Tuple
-from entity import Entity
+from entity import Entity, Linked_Entity
 from itertools import permutations
 from relationship_extractor.korre import KorRE
 from entity_extractor import Dotori
 from remove import NeoBuri
 from entity_linker.entity_linker import Hodu
-from knowledgebase.knowledgebase import EncyKoreaAPIEntity
+from knowledgebase.knowledgebase import Knowledgebase, EncyKoreaAPIEntity
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -28,12 +28,15 @@ def main():
     entities = dotori.extract_entities(processed_text, True)
 
     # 3. Entity linking
-    kb = EncyKoreaAPIEntity()
+    kb = Knowledgebase()
     linked_entities = []
 
     hodu = Hodu(kb)
     for e in entities:
         result = hodu.get_id(e)
+        
+        if result == None:
+            continue
 
         for linked_entity in linked_entities:
             if linked_entity.entity_id == result.entity_id:
