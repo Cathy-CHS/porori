@@ -47,7 +47,7 @@ class Bono:
                 if relation:
                     result_relations.extend(relation)
 
-            sentence_start_idx = sentence_end_idx + 1
+            sentence_start_idx = sentence_end_idx + 2
 
         return result_relations
 
