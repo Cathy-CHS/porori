@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
-import multiprocessing
+from multiprocessing import Pool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_openai import ChatOpenAI
@@ -141,12 +141,11 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
     return messages
 
 
-def export_data_list_as_json(
+def export_data_list(
     data_list: List[Data],
+    res: Dict[str, List],
     input_batches: List[str] = None,
-    output_path="rel_ext_data.json",
 ):
-    res = {"data": []}
     for i, data in enumerate(data_list):
         dict_data = {
             "entities": data.entities_list,
@@ -156,7 +155,11 @@ def export_data_list_as_json(
             "input_text": input_batches[i] if input_batches else None,
         }
         res["data"].append(dict_data)
-    with open(output_path, "w", encoding="UTF-8-sig") as f:
+    
+    return res
+
+def export_data_list_as_json(res, output_file):
+    with open(output_file, "w", encoding="UTF-8-sig") as f:
         json.dump(
             res,
             f,
@@ -348,7 +351,7 @@ def preprocess_text(file_path):
     return text
 
 
-def process_file(file_path, output_directory):
+def process_file(file_path, res):
     print(f"Starting to process file: {file_path}")
     llm = ChatOpenAI(
         # Consider benchmarking with a good model to get
@@ -375,17 +378,16 @@ def process_file(file_path, output_directory):
     # output_path = os.path.join(
     #     output_directory, os.path.basename(file_path).replace(".txt", "_processed.json")
     # )
-    output_path = 'rel_ext_data.json'
-    export_data_list_as_json(relationships, input_batches, output_path)
+    res = export_data_list(relationships, res, input_batches)
     # with open(output_path, 'w', encoding='utf-8') as f:
     #     json.dump(relationships, f, ensure_ascii=False, indent=4)
-    print(f"Output written to {output_path}")
+    print(f"Output added to res")
 
 
-def main(directory, output_directory):
+def main(directory):
     """Process all text files in the directory."""
-    # files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.txt')]
-    # print(f"Found {len(files)} files to process.")
+    # files_list = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.txt')]
+    # print(f"Found {len(files_list)} files to process.")
     files_list = []
     for root, _, files in os.walk(directory):
         for file in files:
@@ -394,16 +396,21 @@ def main(directory, output_directory):
 
     print(f"Total .txt files found: {len(files_list)}")
 
+    res = {"data": []}
+    output_file = "rel_ext_data.json"
+
     # Set up multiprocessing
-    with multiprocessing.Pool(processes=os.cpu_count()) as pool:
-        pool.starmap(process_file, [(file, output_directory) for file in files_list])
+    with Pool(processes=os.cpu_count()) as pool:
+        pool.starmap(process_file, [(file, res) for file in files_list])
+    
+    export_data_list_as_json(res, output_file)
 
 
 
 if __name__ == "__main__":
     try:
         # code that might throw
-        main('datasets_part', 'output')
+        main('datasets/records/2대 정종')
     except Exception as e:
         print(f"An error occurred: {e}")
     # main('src/datasets_part', 'src/output')
