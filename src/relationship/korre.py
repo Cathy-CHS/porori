@@ -511,12 +511,25 @@ class KingKorre(L.LightningModule):
     ):
         _, input_ids, attention_mask, labels = batch
         logits = self.forward(input_ids, attention_mask)
-        preds = torch.argmax(logits, dim=1)
+        preds = torch.sigmoid(logits) > self.max_acc_threshold
+
         loss = nn.CrossEntropyLoss()(logits, labels)
-        accuracy = torchmetrics.Accuracy()(preds, labels)
-        precision = torchmetrics.Precision(num_classes=2, average='macro')(preds, labels)
-        recall = torchmetrics.Recall(num_classes=2, average='macro')(preds, labels)
-        f1 = torchmetrics.F1(num_classes=2, average='macro')(preds, labels)
+
+        accuracy = torchmetrics.Accuracy(
+            "multilabel",
+            num_labels=self.n_class,
+        ).to(
+            self.device
+        )(preds, labels)
+        precision = torchmetrics.Precision(
+            num_labels=self.n_class, average="macro", task="multilabel"
+        ).to(self.device)(preds, labels)
+        recall = torchmetrics.Recall(
+            average="macro", task="multilabel", num_labels=self.n_class
+        ).to(self.device)(preds, labels)
+        f1 = torchmetrics.F1Score(
+            average="macro", task="multilabel", num_labels=self.n_class
+        ).to(self.device)(preds, labels)
 
         self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         self.log("val_acc", accuracy, on_step=True, on_epoch=True, prog_bar=True)
@@ -524,7 +537,13 @@ class KingKorre(L.LightningModule):
         self.log("val_rec", recall, on_step=True, on_epoch=True, prog_bar=True)
         self.log("val_f1", f1, on_step=True, on_epoch=True, prog_bar=True)
 
-        return {"val_loss": loss, "val_acc": accuracy, "val_prec": precision, "val_rec": recall, "val_f1": f1}
+        return {
+            "val_loss": loss,
+            "val_acc": accuracy,
+            "val_prec": precision,
+            "val_rec": recall,
+            "val_f1": f1,
+        }
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=5e-5)
