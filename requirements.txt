@@ -10,3 +10,4 @@ requests
 wget
 torch
 lightning
+wandb
