@@ -4,3 +4,7 @@
 .src/_pycache_
 .relations_output.csv
 .relations_output.txt
+lightning_logs/
+*/*.cache
+*.pyc
+*.bin
