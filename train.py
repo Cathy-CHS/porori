@@ -11,8 +11,8 @@ if __name__ == "__main__":
 
     kkr = KingKorre(rel2id_path="./gpt_relationships_only_person.json")
     tokenizer = kkr.tokenizer
-    train_json_path = "data/2대정종.json"
-    valid_json_path = "data/태조7월.json"
+    train_json_path = "sample_data/2대정종.json"
+    valid_json_path = "sample_data/태조7월.json"
     train_dataset = RelationshipExtractionDataset(
         train_json_path, tokenizer=tokenizer, max_len=512
     )
