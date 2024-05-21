@@ -67,6 +67,5 @@ class Hodu:
         if len(candidates) == 1:
             return candidates[0]
 
-        candidate_scores = self._get_candidate_scores(entity, candidates)
-
-    def 
+        return candidates[0]
+        # candidate_scores = self._get_candidate_scores(entity, candidates)

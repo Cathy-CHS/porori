@@ -9,7 +9,6 @@ import json
 import requests
 import wget
 
-
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -61,7 +60,6 @@ def add_entity_markers(
         text = text[:index] + marker + text[index:]
 
     return text
-
 
 class KorRE:
     def __init__(self):
