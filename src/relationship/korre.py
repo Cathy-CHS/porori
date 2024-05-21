@@ -46,11 +46,11 @@ def add_entity_markers(
 
     for start, end in heads:
         indices.append((start, "[E1]"))
-        indices.append((end + 1, "[/E1]"))
+        indices.append((end, "[/E1]"))
 
     for start, end in tails:
         indices.append((start, "[E2]"))
-        indices.append((end + 1, "[/E2]"))
+        indices.append((end, "[/E2]"))
 
     # Sort the indices in reverse order to avoid messing up the positions after insertion
     indices.sort(reverse=True, key=lambda x: x[0])
@@ -60,6 +60,7 @@ def add_entity_markers(
         text = text[:index] + marker + text[index:]
 
     return text
+
 
 class KorRE:
     def __init__(self):
@@ -382,10 +383,27 @@ class KingKorre(L.LightningModule):
         model_path: str = None,
         rel2id_path: str = "gpt_relationships_only_person.json",
         retrain: bool = True,
+        mode: str = "max",
+        bert_model="datawhales/korean-relation-extraction",
+        n_classes=65,
+        max_token_len=512,
+        max_acc_threshold=0.6,
     ):
         super().__init__()
+        self.model_path = model_path
+        self.bert_model = bert_model
+        self.n_class = n_classes
+        self.max_token_len = max_token_len
+        self.max_acc_threshold = max_acc_threshold
+        self.rel2id_path = rel2id_path
+        with open(rel2id_path, "r", encoding="utf-8-sig") as f:
+            self.label2class = json.load(f)
+        # sort label by its key, with dictionary order
+        label_list = [key for key in sorted(self.label2class.keys())]
+        self.id2label = {i: label for i, label in enumerate(label_list)}
+        self.label2id = {label: i for i, label in enumerate(label_list)}
 
-        self.mode = "max"
+        self.mode = mode
         self.args = easydict.EasyDict(
             {
                 "bert_model": "datawhales/korean-relation-extraction",
@@ -416,15 +434,6 @@ class KingKorre(L.LightningModule):
         # relation list
         self.relation_list = list(self.relid2label.keys())
 
-        # device
-        # self.device = torch.device(
-        #     "cuda"
-        #     if torch.cuda.is_available()
-        #     else "mps" if torch.backends.mps.is_available() else "cpu"
-        # )
-
-        # self.trained_model = self.trained_model.to(self.device)
-
     def __get_korre_model(self):
         """Load the pre-trained Korean relation extraction model."""
         if not os.path.exists("./pretrained_weight"):
@@ -436,52 +445,36 @@ class KingKorre(L.LightningModule):
             url = "https://huggingface.co/datawhales/korean-relation-extraction/resolve/main/pytorch_model.bin"
             wget.download(url, out=pretrained_weight)
 
-        trained_model = BertModel.from_pretrained(
-            self.args.bert_model, return_dict=True
-        )
-        self.tokenizer = BertTokenizer.from_pretrained(self.args.bert_model)
+        trained_model = BertModel.from_pretrained(self.bert_model, return_dict=True)
+        self.tokenizer = BertTokenizer.from_pretrained(self.bert_model)
         trained_model.load_state_dict(torch.load(pretrained_weight), strict=False)
         self.pretrained_config = trained_model.config
 
         # Define a separate classifier layer
-        self.classifier = nn.Linear(trained_model.config.hidden_size, self.args.n_class)
+        self.classifier = nn.Linear(trained_model.config.hidden_size, self.n_class)
 
         trained_model.eval()
 
         return trained_model
 
-    def add_entity_markers(self, text, heads: torch.Tensor, tails: torch.Tensor):
+    def forward(self, input_ids, attention_mask):
         """
-        Add [E1], [/E1], [E2], [/E2] tokens to the sentence based on the head and tail indices.
-        There can be multiple occurrences of head and tail entities in the sentence. All
-        the head and tail entities will be marked with [E1], [/E1], [E2], [/E2].
+        Outputs the logits for the input_ids and attention_mask. the input_ids
+        should have the entity markers tokens ([E1], [/E1], [E2], [/E2]) added.
+
 
         Args:
-            text (str): The input text.
-            heads (torch.Tensor): Tensor of shape (num_heads, 2) containing start and end indices of head entities.
-            tails (torch.Tensor): Tensor of shape (num_tails, 2) containing start and end indices of tail entities.
+            input_ids (torch.Tensor): The input tensor containing the token ids.
+            (batch_size, seq_len)
+            attention_mask (torch.Tensor): The attention mask tensor. (batch_size, seq_len)
+
+        Raises:
+            ValueError:
+
+        Returns:
+            torch.Tensor: The logits for the input_ids and attention_mask.
+            the tensor is (batch_size, n_class).
         """
-        # Create a list of indices and markers
-        indices = []
-
-        for start, end in heads.tolist():
-            indices.append((start, "[E1]"))
-            indices.append((end + 1, "[/E1]"))
-
-        for start, end in tails.tolist():
-            indices.append((start, "[E2]"))
-            indices.append((end + 1, "[/E2]"))
-
-        # Sort the indices in reverse order to avoid messing up the positions after insertion
-        indices.sort(reverse=True, key=lambda x: x[0])
-
-        # Insert markers into the text
-        for index, marker in indices:
-            text = text[:index] + marker + text[index:]
-
-        return text
-
-    def forward(self, input_ids, attention_mask):
         bert_outputs = self.trained_model(input_ids, attention_mask=attention_mask)
         last_hidden_state = bert_outputs.last_hidden_state
 
@@ -498,15 +491,22 @@ class KingKorre(L.LightningModule):
             raise ValueError(f"Unknown mode: {self.mode}")
 
         logits = self.classifier(pooled_output)
+
         return logits
 
-    def training_step(self, batch, batch_idx):
+    def training_step(
+        self,
+        batch,
+    ):
         _, input_ids, attention_mask, labels = batch
         logits = self.forward(input_ids, attention_mask)
         loss = nn.CrossEntropyLoss()(logits, labels)
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(
+        self,
+        batch,
+    ):
         input_ids, attention_mask, labels = batch
         logits = self.forward(input_ids, attention_mask)
         loss = nn.CrossEntropyLoss()(logits, labels)
@@ -515,6 +515,52 @@ class KingKorre(L.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=5e-5)
         return optimizer
+
+    def predict(self, text: str, get_labels: bool = False, conf_threshold: float = 0.6):
+        """
+        Get the relationship between the heads and tails in the text. Assumes that
+        the [E1], [/E1], [E2], [/E2] tokens have been added to the text.
+
+        Args:
+            text (str): The input text with the entity markers tokens.
+            get_labels (bool): If True, return the labels of the relationships.
+            If False, return the logits. Defaults to False.
+
+        Returns:
+            logits (torch.Tensor): The logits for the input text.
+            pred_labels (List[str]): The predicted labels of the relationships.
+            only returned if get_labels is True.
+            pred_classes (List[str]): The predicted classes of the relationships.
+              only returned if get_labels is True.
+        """
+        encoding = self.tokenizer.encode_plus(
+            text,
+            add_special_tokens=True,
+            max_length=self.max_token_len,
+            return_token_type_ids=False,
+            padding="max_length",
+            truncation=True,
+            return_attention_mask=True,
+            return_tensors="pt",
+        )
+
+        input_ids = encoding["input_ids"]
+        attention_mask = encoding["attention_mask"]
+
+        logits = self.forward(input_ids, attention_mask)
+
+        if get_labels:
+            preds = torch.sigmoid(logits) > conf_threshold
+            preds = preds.cpu().detach().numpy()
+            # Get the indices of the 1s in the predictions
+            pred_indices = np.where(preds == 1)[1]
+            pred_labels = [self.id2label[i] for i in pred_indices]
+            pred_classes = [self.label2class[label] for label in pred_labels]
+            return pred_labels, pred_classes
+        return logits
+
+    def get_labels(self):
+        pass
 
 
 # if __name__ == "__main__":
