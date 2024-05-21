@@ -19,13 +19,28 @@ def main():
     # 3. generate knowledge graph
 
     # 1. 한자 제거
-    input_file = 'input.txt'
-    neoburi = NeoBuri(input_file)
-    processed_text = neoburi.process_text()
+    input_dir = 'input_texts' #인풋 디렉토리
+    files = [os.path.join(input_dir, file) for file in os.listdir(input_dir) if file.endswith('.txt')]
+
+    all_processed_text = []
+    
+    for input_file in files:
+        neoburi = NeoBuri(input_file)
+        processed_text = neoburi.process_text()
+        all_processed_text.append(processed_text)
+
+    combined_text = ' '.join(all_processed_text)
+    print(combined_text)
+    
+    # input_file = 'input.txt'
+    # neoburi = NeoBuri(input_file)
+    # processed_text = neoburi.process_text()
 
     # 2. Entity extraction
     dotori = Dotori()
-    entities = dotori.extract_entities(processed_text, True)
+    entities = dotori.extract_entities(combined_text, True)
+    for e in entities:
+        print(str(e))
 
     # 3. Entity linking
     kb = EncyKoreaAPIKnowledgeBase()
@@ -51,18 +66,19 @@ def main():
         else:
             existing_entity.add_item(e.start, e.end)
 
-        # result는 EncyKoreaAPIEntity(name=item["headword"], entity_id=item["eid"], access_key=self.access_key) 로 반환
-        # 만약에 hodu.get_id로 나온 result의 entity_id가 Linked_Entity 중에 존재하지 않으면 Linked_Entity 생성
-        # e를 Linked_Entity의 items에 start, end index와 함께 넣어주기
-        # Linked_Entity(name, id, item)
     f = open("linked_entities.txt", "w", encoding="utf-8")
     for e in linked_entities:
         f.write(f"Entity: {e.name}, ID: {e.entity_id}")
+        print(str(e))
+        for ee in e.items:
+            print(str(ee))
         
     f.close()
+
     # 4. Relation Extraction
-    #bono = Bono()
-    #result = bono.relation_extract(processed_text, linked_entities)
+    bono = Bono()
+    result = bono.relation_extract(combined_text, linked_entities, 1024)
+    
 
 
 

@@ -1,8 +1,0 @@
-{'entity': 'PS', 'word': '태조', 'start': 0, 'end': 2}
-{'entity': 'LC', 'word': '수창궁', 'start': 4, 'end': 7}
-{'entity': 'DT', 'word': '이달12일', 'start': 26, 'end': 32}
-{'entity': 'PS', 'word': '공양왕', 'start': 34, 'end': 37}
-{'entity': 'PS', 'word': '태조', 'start': 42, 'end': 44}
-{'entity': 'PS', 'word': '태조', 'start': 64, 'end': 66}
-{'entity': 'PS', 'word': '배극렴', 'start': 98, 'end': 101}
-{'entity': 'PS', 'word': '왕대비', 'start': 105, 'end': 108}

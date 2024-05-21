@@ -47,11 +47,11 @@ class Dotori:
         grouped = self.group_chunk(entity_list)
 
         # for debugging
-        out = open("entities_output.txt", "w", encoding="utf-8")
-        for e in grouped:
-            out.write(str(e) + "\n")
-        print("처리가 완료되었습니다. 결과는 {} 파일에 저장되었습니다.".format("entities_output.txt"))
-        out.close()
+        # out = open("entities_output.txt", "w", encoding="utf-8")
+        # for e in grouped:
+        #     out.write(str(e) + "\n")
+        # print("처리가 완료되었습니다. 결과는 {} 파일에 저장되었습니다.".format("entities_output.txt"))
+        # out.close()
         #for debugging
 
         if (filtered): # filter 할 경우
