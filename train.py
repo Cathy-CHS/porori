@@ -7,7 +7,7 @@ from lightning.pytorch.loggers import WandbLogger
 
 
 if __name__ == "__main__":
-    wandb_logger = WandbLogger(log_model="all")
+    wandb_logger = WandbLogger(log_model="all", project="KingKorre")
 
     kkr = KingKorre(rel2id_path="./gpt_relationships_only_person.json")
     tokenizer = kkr.tokenizer
