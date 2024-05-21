@@ -82,18 +82,4 @@ class RelationshipExtractionDataset(Dataset):
         input_ids = encoding["input_ids"].squeeze()
         attention_mask = encoding["attention_mask"].squeeze()
 
-        return {
-            "input_ids": input_ids,
-            "attention_mask": attention_mask,
-            "labels": label,
-        }
-
-
-# # Initialize tokenizer
-# tokenizer = BertTokenizer.from_pretrained("datawhales/korean-relation-extraction")
-
-# # Create dataset
-# dataset = RelationshipExtractionDataset("rel_ext_data.json", tokenizer)
-
-# # Create DataLoader
-# dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+        return text_with_markers, input_ids, attention_mask, label
