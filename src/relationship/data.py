@@ -32,8 +32,9 @@ class RelationshipExtractionDataset(Dataset):
         self.tokenizer.add_special_tokens(self.special_tokens_dict)
 
         self.data_list = []  # ((head, tail), text, label) list
-        rel_dict = {}  # {(head, tail): [relationships]} dictionary
+        # {(head, tail): [relationships]} dictionary
         for doc in self.data:
+            rel_dict = {}
             for rel in doc["relationships"]:
                 if (rel[0], rel[1]) in rel_dict:
                     rel_dict[(rel[0], rel[1])].append(rel[2])
