@@ -20,9 +20,24 @@ class RelationshipExtractionDataset(Dataset):
         Dataset (_type_): _description_
     """
 
-    def __init__(self, data_path, tokenizer, max_len=512, num_classes=65):
+    def __init__(
+        self,
+        data_path,
+        tokenizer,
+        max_len=512,
+        num_classes=65,
+        rel2id_path: str = "gpt_relationships_only_person.json",
+    ):
         with open(data_path, "r", encoding="utf-8-sig") as f:
             self.data = json.load(f)["data"]
+
+        with open(rel2id_path, "r", encoding="utf-8-sig") as f:
+            self.label2class = json.load(f)
+        # sort label by its key, with dictionary order
+        label_list = [key for key in sorted(self.label2class.keys())]
+        self.id2label = {i: label for i, label in enumerate(label_list)}
+        self.label2id = {label: i for i, label in enumerate(label_list)}
+
         self.num_classes = num_classes
         self.tokenizer = tokenizer
         self.max_len = max_len
@@ -40,10 +55,13 @@ class RelationshipExtractionDataset(Dataset):
                     rel_dict[(rel[0], rel[1])].append(rel[2])
                 else:
                     rel_dict[(rel[0], rel[1])] = [rel[2]]
-            for key, values in rel_dict.items():
+            for key, rels in rel_dict.items():
                 label = torch.zeros(num_classes)
-                for value in values:
-                    label[self.tokenizer.convert_tokens_to_ids(value)] = 1
+                for rel in rels:
+                    try:
+                        label[self.label2id[rel]] = 1
+                    except KeyError:
+                        print(f"KeyError: {rel}. Skipping...")
                 self.data_list.append((key, doc["input_text"], label))
 
     def __len__(self):
