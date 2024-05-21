@@ -348,10 +348,19 @@ def preprocess_text(file_path):
     return text
 
 
-def process_file(file_path, output_directory, llm):
+def process_file(file_path, output_directory):
     print(f"Starting to process file: {file_path}")
+    llm = ChatOpenAI(
+        # Consider benchmarking with a good model to get
+        # a sense of the best possible quality.
+        model="gpt-4o",
+        # Remember to set the temperature to 0 for extractions!
+        temperature=0,
+        verbose=True,
+        api_key=os.getenv("OPENAI_API_KEY"),
+    )
     input_batches = []
-    num_sentences_per_batch = 8
+    num_sentences_per_batch = 5
     """Process a single file."""
     print(f"Processing {file_path}")
     text = preprocess_text(file_path)
@@ -363,9 +372,10 @@ def process_file(file_path, output_directory, llm):
             ".".join(sentences[i : min(i + num_sentences_per_batch, len(sentences))])
         )
     relationships = get_relationships_from_text(llm, input_batches)
-    output_path = os.path.join(
-        output_directory, os.path.basename(file_path).replace(".txt", "_processed.json")
-    )
+    # output_path = os.path.join(
+    #     output_directory, os.path.basename(file_path).replace(".txt", "_processed.json")
+    # )
+    output_path = 'rel_ext_data.json'
     export_data_list_as_json(relationships, input_batches, output_path)
     # with open(output_path, 'w', encoding='utf-8') as f:
     #     json.dump(relationships, f, ensure_ascii=False, indent=4)
@@ -374,15 +384,6 @@ def process_file(file_path, output_directory, llm):
 
 def main(directory, output_directory):
     """Process all text files in the directory."""
-    llm = ChatOpenAI(
-        # Consider benchmarking with a good model to get
-        # a sense of the best possible quality.
-        model="gpt-4-turbo",
-        # Remember to set the temperature to 0 for extractions!
-        temperature=0,
-        verbose=True,
-        api_key=os.getenv("OPENAI_API_KEY"),
-    )
     # files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.txt')]
     # print(f"Found {len(files)} files to process.")
     files_list = []
@@ -395,14 +396,14 @@ def main(directory, output_directory):
 
     # Set up multiprocessing
     with multiprocessing.Pool(processes=os.cpu_count()) as pool:
-        print("debug")
-        pool.starmap(process_file, [(file, output_directory, llm) for file in files])
+        pool.starmap(process_file, [(file, output_directory) for file in files_list])
+
 
 
 if __name__ == "__main__":
     try:
         # code that might throw
-        main("data", "rel_output")
+        main('datasets_part', 'output')
     except Exception as e:
         print(f"An error occurred: {e}")
     # main('src/datasets_part', 'src/output')
