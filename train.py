@@ -23,7 +23,8 @@ if __name__ == "__main__":
     print(f"valid_dataset: {len(valid_dataset)}")
     train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
     valid_dataloader = DataLoader(valid_dataset, batch_size=32, shuffle=False)
-    trainer = l.Trainer(max_epochs=1, accelerator="mps", devices=1, logger=wandb_logger)
+
+    trainer = l.Trainer(max_epochs=1, logger=wandb_logger)
     trainer.fit(
         model=kkr,
         train_dataloaders=train_dataloader,
