@@ -13,7 +13,7 @@ import wget
 import warnings
 
 warnings.filterwarnings("ignore")
-from model import KREModel
+from src.relationship.models import KREModel
 
 # from pororo import Pororo
 import os
@@ -26,9 +26,12 @@ import easydict
 import logging
 import lightning as L
 from transformers import BertTokenizer, BertModel
+from typing import List, Tuple
 
 
-def add_entity_markers(self, text, heads: torch.Tensor, tails: torch.Tensor):
+def add_entity_markers(
+    text, heads: List[tuple[int, int]], tails: List[tuple[int, int]]
+):
     """
     Add [E1], [/E1], [E2], [/E2] tokens to the sentence based on the head and tail indices.
     There can be multiple occurrences of head and tail entities in the sentence. All
@@ -42,11 +45,11 @@ def add_entity_markers(self, text, heads: torch.Tensor, tails: torch.Tensor):
     # Create a list of indices and markers
     indices = []
 
-    for start, end in heads.tolist():
+    for start, end in heads:
         indices.append((start, "[E1]"))
         indices.append((end + 1, "[/E1]"))
 
-    for start, end in tails.tolist():
+    for start, end in tails:
         indices.append((start, "[E2]"))
         indices.append((end + 1, "[/E2]"))
 
@@ -516,5 +519,5 @@ class KingKorre(L.LightningModule):
         return optimizer
 
 
-if __name__ == "__main__":
-    king = KingKorre()
+# if __name__ == "__main__":
+#     king = KingKorre()
