@@ -390,8 +390,6 @@ def main(directory, output_directory):
         for file in files:
             if file.endswith(".txt"):
                 files_list.append(os.path.join(root, file))
-                print(root)
-                print(len(files_list))
 
     print(f"Total .txt files found: {len(files_list)}")
 
