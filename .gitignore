@@ -5,3 +5,4 @@
 .relations_output.csv
 .relations_output.txt
 .src/datasets
+data/

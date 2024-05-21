@@ -338,12 +338,15 @@ def get_relationships_from_text(llm, texts: List[str]) -> Data:
 
 def preprocess_text(file_path):
     """Remove Chinese characters and unnecessary special characters from the text."""
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         text = file.read()
         # Removing specific pattern (e.g., phone numbers) and non-Korean, non-English characters
-        text = re.sub(r'\d{2,}', '', text)  # example to remove digits appearing in length of 2 or more
-        text = re.sub('[^a-zA-Z0-9ㄱ-ㅣ가-힣., ·"]', '', text)
+        text = re.sub(
+            r"\d{2,}", "", text
+        )  # example to remove digits appearing in length of 2 or more
+        text = re.sub('[^a-zA-Z0-9ㄱ-ㅣ가-힣., ·"]', "", text)
     return text
+
 
 def process_file(file_path, output_directory, llm):
     print(f"Starting to process file: {file_path}")
@@ -357,16 +360,17 @@ def process_file(file_path, output_directory, llm):
     print(sentences)
     for i in range(0, len(sentences), num_sentences_per_batch):
         input_batches.append(
-            ".".join(
-                sentences[i : min(i + num_sentences_per_batch, len(sentences))]
-            )
+            ".".join(sentences[i : min(i + num_sentences_per_batch, len(sentences))])
         )
     relationships = get_relationships_from_text(llm, input_batches)
-    output_path = os.path.join(output_directory, os.path.basename(file_path).replace('.txt', '_processed.json'))
+    output_path = os.path.join(
+        output_directory, os.path.basename(file_path).replace(".txt", "_processed.json")
+    )
     export_data_list_as_json(relationships, input_batches, output_path)
     # with open(output_path, 'w', encoding='utf-8') as f:
     #     json.dump(relationships, f, ensure_ascii=False, indent=4)
     print(f"Output written to {output_path}")
+
 
 def main(directory, output_directory):
     """Process all text files in the directory."""
@@ -381,24 +385,26 @@ def main(directory, output_directory):
     )
     # files = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.txt')]
     # print(f"Found {len(files)} files to process.")
-    files = []
-    for root, dirs, files in os.walk(directory):
+    files_list = []
+    for root, _, files in os.walk(directory):
         for file in files:
-            if file.endswith('.txt'):
-                files.append(os.path.join(root, file))
+            if file.endswith(".txt"):
+                files_list.append(os.path.join(root, file))
+                print(root)
+                print(len(files_list))
 
-    print(f"Total .txt files found: {len(files)}")
-    
+    print(f"Total .txt files found: {len(files_list)}")
+
     # Set up multiprocessing
     with multiprocessing.Pool(processes=os.cpu_count()) as pool:
         print("debug")
         pool.starmap(process_file, [(file, output_directory, llm) for file in files])
 
+
 if __name__ == "__main__":
     try:
         # code that might throw
-        main('datasets_part', 'output')
+        main("data", "rel_output")
     except Exception as e:
         print(f"An error occurred: {e}")
     # main('src/datasets_part', 'src/output')
-
