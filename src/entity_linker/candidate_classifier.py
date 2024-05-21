@@ -2,9 +2,13 @@
 # KLUE/ROBERRTA-base
 # KLUE/ROBERRTA-large
 
-from transformers import 
+import lightning as L
+import transformers
 
-class CandidateClassifier:
+roberta_base_config = transformers.RobertaConfig.from_pretrained("KLUE/ROBERTA-base")
+
+
+class CandidateClassifier(L.LightningModule):
     def __init__(
         self,
         backbone: str,
@@ -23,14 +27,19 @@ class CandidateClassifier:
             "KLUE/ROBERTA-large",
         ]:
             raise ValueError("Invalid backbone model")
-        
-        if model_path:
 
+        if model_path:
+            self.load_model_from_local(model_path)
+        elif pretrained:
+            self.load_model_from_huggingface(backbone)
+        else:
+            self.load_model_from_huggingface(backbone)
+            # TODO: reset model weights
 
     def load_model_from_local(self, path=None):
         pass
 
-    def load_model_from_huggingface(self, model_name):
+    def load_model_from_huggingface(self, model_name) -> transformers.PreTrainedModel:
         pass
 
     def predict(self, entity, candidate):
