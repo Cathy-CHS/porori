@@ -12,3 +12,4 @@ torch
 lightning
 wandb
 fire
+torchmetrics

@@ -127,41 +127,28 @@ def save_record_to_file(root_directory, king_name, term, record_number, text):
     with open(file_path, 'w', encoding='utf-8') as file:
         file.write(text)
 
-# kings = king_links(main_url)
-# for king_name, king_link in kings:
-#     month_list = extract_month_links(king_link)
-#     print(king_name)
-#     for month in month_list:
-#         links = extract_text_links(month)
-#         for i, (term, link) in enumerate(links, 1):
-#             text = extract_records_from_month_page(link)
-#             print(term)
-#             save_record_to_file(king_name, term, i, text)
-            
-
 # 병렬 처리 예제
 def main():
     # 이미 완료된 왕 목록
     completed_kings_list = [
-        "1대 태조", 
-        "2대 정종", 
-        "3대 태종", 
-        "4대 세종",
-        "5대 문종",
-        "6대 단종",
-        "7대 세조",
-        "8대 예종",
-        "9대 성종",
-        "10대 연산군",
-        "11대 중종",
-        "12대 인종",
-        "15대 광해군중초본",
-        "17대 효종"]  
+        # "1대 태조", 
+        # "2대 정종", 
+        # "3대 태종", 
+        # "4대 세종",
+        # "5대 문종",
+        # "6대 단종",
+        # "7대 세조",
+        # "8대 예종",
+        # "9대 성종",
+        # "10대 연산군",
+        # "11대 중종",
+        # "12대 인종",
+        # "15대 광해군중초본",
+        # "17대 효종"
+        ]  
     king_list = king_links(main_url)
     root_directory = "records"
     log_file = open("log.txt", "w", encoding="utf-8")
-    # for king in king_list:
-    #     print(king[0])
 
     with ThreadPoolExecutor(max_workers=10) as executor:
         future_to_king = {executor.submit(extract_month_links, king[1]): king for king in king_list if king[0] not in completed_kings_list}

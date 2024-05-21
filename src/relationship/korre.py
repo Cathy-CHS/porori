@@ -26,6 +26,7 @@ import logging
 import lightning as L
 from transformers import BertTokenizer, BertModel
 from typing import List, Tuple
+import torchmetrics
 
 
 def add_entity_markers(
@@ -510,9 +511,20 @@ class KingKorre(L.LightningModule):
     ):
         _, input_ids, attention_mask, labels = batch
         logits = self.forward(input_ids, attention_mask)
+        preds = torch.argmax(logits, dim=1)
         loss = nn.CrossEntropyLoss()(logits, labels)
+        accuracy = torchmetrics.Accuracy()(preds, labels)
+        precision = torchmetrics.Precision(num_classes=2, average='macro')(preds, labels)
+        recall = torchmetrics.Recall(num_classes=2, average='macro')(preds, labels)
+        f1 = torchmetrics.F1(num_classes=2, average='macro')(preds, labels)
+
         self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
-        return loss
+        self.log("val_acc", accuracy, on_step=True, on_epoch=True, prog_bar=True)
+        self.log("val_prec", precision, on_step=True, on_epoch=True, prog_bar=True)
+        self.log("val_rec", recall, on_step=True, on_epoch=True, prog_bar=True)
+        self.log("val_f1", f1, on_step=True, on_epoch=True, prog_bar=True)
+
+        return {"val_loss": loss, "val_acc": accuracy, "val_prec": precision, "val_rec": recall, "val_f1": f1}
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=5e-5)
