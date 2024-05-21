@@ -5,4 +5,9 @@
 .relations_output.csv
 .relations_output.txt
 .src/datasets
+lightning_logs/
+*/*.cache
+*.pyc
+*.bin
 data/
+wandb/
