@@ -1,6 +1,6 @@
 import re
 from transformers import AutoTokenizer, pipeline
-from entity import Entity
+from src.entity.entity import Entity
 from typing import List
 
 
