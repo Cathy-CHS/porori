@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import re
+from multiprocessing import Pool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_openai import ChatOpenAI
@@ -139,12 +141,11 @@ def tool_example_to_messages(example: Example) -> List[BaseMessage]:
     return messages
 
 
-def export_data_list_as_json(
+def export_data_list(
     data_list: List[Data],
+    res: Dict[str, List],
     input_batches: List[str] = None,
-    output_path="rel_ext_data.json",
 ):
-    res = {"data": []}
     for i, data in enumerate(data_list):
         dict_data = {
             "entities": data.entities_list,
@@ -154,7 +155,11 @@ def export_data_list_as_json(
             "input_text": input_batches[i] if input_batches else None,
         }
         res["data"].append(dict_data)
-    with open(output_path, "w", encoding="UTF-8-sig") as f:
+    
+    return res
+
+def export_data_list_as_json(res, output_file):
+    with open(output_file, "w", encoding="UTF-8-sig") as f:
         json.dump(
             res,
             f,
@@ -329,52 +334,87 @@ def get_relationships_from_text(llm, texts: List[str]) -> Data:
     )
 
     with get_openai_callback() as cb:
-        res = runnable.batch([{"input": text, "examples": messages} for text in texts])
+        res = runnable.batch([{"input": text, "examples": messages} for text in texts[:2]], config={"max_concurrency": 5})
         print(cb)
     return res
 
 
-def main():
+def preprocess_text(file_path):
+    """Remove Chinese characters and unnecessary special characters from the text."""
+    with open(file_path, "r", encoding="utf-8") as file:
+        text = file.read()
+        # Removing specific pattern (e.g., phone numbers) and non-Korean, non-English characters
+        text = re.sub(
+            r"\d{2,}", "", text
+        )  # example to remove digits appearing in length of 2 or more
+        text = re.sub('[^a-zA-Z0-9ㄱ-ㅣ가-힣., ·"]', "", text)
+    return text
 
-    # Testing the prompt
-    # human_input = """
-    #     사간원에서 김덕원의 일을 아뢰니, 그대로 따랐다. 우의정 민정중이 하루 전에 입시하여 말하다가, 김덕원의 일에 미치자 임금에게 빨리 대간이 아뢴 대로 따를 것을 권하고, 또 아뢰기를,"김덕원이 부지런하고 성실하여 직책을 잘 수행했다는 칭찬이 조금 있으니, 성상께서 대간의 아룀을 윤허하지 않으심은, 진실로 인재를 사랑하고 아끼는 뜻에서 나왔겠지만, 공의가 이미 발표된 뒤에는 또한 시비를 명백히 하여 악을 징계하고 선을 장려하는 터전을 삼지 않을 수 없습니다.
-    # """
 
-    # We will be using tool calling mode, which
-    # requires a tool calling capable model.
+def process_file(file_path, res):
+    print(f"Starting to process file: {file_path}")
     llm = ChatOpenAI(
         # Consider benchmarking with a good model to get
         # a sense of the best possible quality.
-        model="gpt-4-turbo",
+        model="gpt-4o",
         # Remember to set the temperature to 0 for extractions!
         temperature=0,
         verbose=True,
         api_key=os.getenv("OPENAI_API_KEY"),
     )
-
-    # 태조 실록 쭉 읽어오기
-    # 3문장 정도씩 끊기
-    # 결과 모아서 저장하기
-
-    txt_path = "output.txt"
     input_batches = []
-    num_sentences_per_batch = 8
-    with open(txt_path, "r", encoding="utf-8") as f:
-        text = f.read()
-        sentences = text.split(".")
-        print(sentences)
-        for i in range(0, len(sentences), num_sentences_per_batch):
-            input_batches.append(
-                ".".join(
-                    sentences[i : min(i + num_sentences_per_batch, len(sentences))]
-                )
-            )
+    num_sentences_per_batch = 5
+    """Process a single file."""
+    print(f"Processing {file_path}")
+    text = preprocess_text(file_path)
+    print(f"Preprocessed text: {text[:100]}...")
+    sentences = text.split(".")
+    print(sentences)
+    for i in range(0, len(sentences), num_sentences_per_batch):
+        input_batches.append(
+            ".".join(sentences[i : min(i + num_sentences_per_batch, len(sentences))])
+        )
+    relationships = get_relationships_from_text(llm, input_batches)
+    # output_path = os.path.join(
+    #     output_directory, os.path.basename(file_path).replace(".txt", "_processed.json")
+    # )
+    res = export_data_list(relationships, res, input_batches)
+    # with open(output_path, 'w', encoding='utf-8') as f:
+    #     json.dump(relationships, f, ensure_ascii=False, indent=4)
+    print(f"Output added to res")
 
-    res = get_relationships_from_text(llm, input_batches)
-    export_data_list_as_json(res, input_batches, "src/rel_ext_data.json")
-    print(res)
+
+def main(directory):
+    """Process all text files in the directory."""
+    # files_list = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.txt')]
+    # print(f"Found {len(files_list)} files to process.")
+    file_name_list = []
+    files_list = []
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".txt"):
+                file_name_list.append(file.split(".")[0])
+                files_list.append(os.path.join(root, file))
+
+    print(f"Total .txt files found: {len(files_list)}")
+
+    res = {"data": []}
+
+    # # Set up multiprocessing
+    # with Pool(processes=os.cpu_count()) as pool:
+    #     pool.starmap(process_file, [(file, res) for file in files_list])
+    
+    for i in range(len(files_list)):
+        process_file(files_list[i], res)
+        output_file = file_name_list[i] + ".json"
+        export_data_list_as_json(res, output_file)
+
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        # code that might throw
+        main('data')
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    # main('src/datasets_part', 'src/output')

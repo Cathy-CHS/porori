@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_openai import ChatOpenAI
@@ -346,7 +345,7 @@ def main():
     llm = ChatOpenAI(
         # Consider benchmarking with a good model to get
         # a sense of the best possible quality.
-        model="gpt-4-turbo",
+        model="gpt-4o",
         # Remember to set the temperature to 0 for extractions!
         temperature=0,
         verbose=True,
@@ -357,7 +356,7 @@ def main():
     # 3문장 정도씩 끊기
     # 결과 모아서 저장하기
 
-    txt_path = "output.txt"
+    txt_path = "src/output.txt"
     input_batches = []
     num_sentences_per_batch = 8
     with open(txt_path, "r", encoding="utf-8") as f:

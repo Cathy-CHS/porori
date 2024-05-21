@@ -1,7 +1,11 @@
 from typing import List, Tuple
-from entity import Entity
+import sys, os
+
+sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+
+from entity.entity import Entity
 from itertools import permutations
-from .korre import KorRE
+from korre import KorRE
 from entity_extractor import Dotori
 from tqdm import tqdm
 

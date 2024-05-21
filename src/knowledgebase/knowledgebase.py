@@ -1,6 +1,6 @@
 import os
 import requests
-from entity import Entity
+from src.entity.entity import Entity
 from typing import List
 
 AVAILABLE_KNOWLEDGE_BASES = ["encykorea-api"]  # TODO: Add encykorea-local

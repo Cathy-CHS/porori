@@ -12,12 +12,55 @@ import wget
 import warnings
 
 warnings.filterwarnings("ignore")
+from src.relationship.models import KREModel
 
 # from pororo import Pororo
-from itertools import permutations
-from transformers import BertTokenizer
-from transformers import logging
-from .model import KREModel
+import os
+import torch
+import torch.nn as nn
+import numpy as np
+import json
+import wget
+import easydict
+import logging
+import lightning as L
+from transformers import BertTokenizer, BertModel
+from typing import List, Tuple
+
+
+def add_entity_markers(
+    text, heads: List[tuple[int, int]], tails: List[tuple[int, int]]
+):
+    """
+    Add [E1], [/E1], [E2], [/E2] tokens to the sentence based on the head and tail indices.
+    There can be multiple occurrences of head and tail entities in the sentence. All
+    the head and tail entities will be marked with [E1], [/E1], [E2], [/E2].
+
+    Args:
+        text (str): The input text.
+        heads (torch.Tensor): Tensor of shape (num_heads, 2) containing start and end indices of head entities.
+        tails (torch.Tensor): Tensor of shape (num_tails, 2) containing start and end indices of tail entities.
+    """
+    # Create a list of indices and markers
+    indices = []
+
+    for start, end in heads:
+        indices.append((start, "[E1]"))
+        indices.append((end, "[/E1]"))
+
+    for start, end in tails:
+        indices.append((start, "[E2]"))
+        indices.append((end, "[/E2]"))
+
+    # Sort the indices in reverse order to avoid messing up the positions after insertion
+    indices.sort(reverse=True, key=lambda x: x[0])
+
+    # Insert markers into the text
+    for index, marker in indices:
+        text = text[:index] + marker + text[index:]
+
+    return text
+
 
 class KorRE:
     def __init__(self):
@@ -92,74 +135,6 @@ class KorRE:
             label_out.append(label)
 
         return label_out
-
-    # def pororo_ner(self, sentence: str):
-    #     """ pororo의 ner 모듈을 이용하여 그대로 반환하는 함수.
-    #     """
-    #     return self.ner_module(sentence)
-
-    # def ner(self, sentence: str):
-    #     """ 주어진 문장에서 pororo의 ner 모듈을 이용해 개체명 인식을 수행하고 각 개체의 인덱스 위치를 함께 반환하는 함수.
-    #     """
-    #     ner_result = self.ner_module(sentence)
-
-    #     # 인식된 각 개체명의 range 계산
-    #     ner_result = [(item[0], item[1], len(item[0])) for item in ner_result]
-
-    #     modified_list = []
-    #     tmp_cnt = 0
-
-    #     for item in ner_result:
-    #         modified_list.append((item[0], item[1], [tmp_cnt, tmp_cnt + item[2]]))
-    #         tmp_cnt += item[2]
-
-    #     ent_list = [item for item in modified_list if item[1] != 'O']
-
-    #     return ent_list
-
-    # def get_all_entity_pairs(self, sentence: str) -> list:
-    #     """ 주어진 문장에서 개체명 인식을 통해 모든 가능한 [문장, subj_range, obj_range]의 리스트를 반환하는 함수.
-
-    #     Example:
-    #         sentence = '모토로라 레이저 M는 모토로라 모빌리티에서 제조/판매하는 안드로이드 스마트폰이다.'
-
-    #     Return:
-    #         [(('모토로라 레이저 M', 'ARTIFACT', [0, 10]), ('모토로라 모빌리티', 'ORGANIZATION', [12, 21])),
-    #          (('모토로라 레이저 M', 'ARTIFACT', [0, 10]), ('안드로이드', 'TERM', [32, 37])),
-    #          (('모토로라 레이저 M', 'ARTIFACT', [0, 10]), ('스마트폰', 'TERM', [38, 42])),
-    #          (('모토로라 모빌리티', 'ORGANIZATION', [12, 21]), ('모토로라 레이저 M', 'ARTIFACT', [0, 10])),
-    #          (('모토로라 모빌리티', 'ORGANIZATION', [12, 21]), ('안드로이드', 'TERM', [32, 37])),
-    #          (('모토로라 모빌리티', 'ORGANIZATION', [12, 21]), ('스마트폰', 'TERM', [38, 42])),
-    #          (('안드로이드', 'TERM', [32, 37]), ('모토로라 레이저 M', 'ARTIFACT', [0, 10])),
-    #          (('안드로이드', 'TERM', [32, 37]), ('모토로라 모빌리티', 'ORGANIZATION', [12, 21])),
-    #          (('안드로이드', 'TERM', [32, 37]), ('스마트폰', 'TERM', [38, 42])),
-    #          (('스마트폰', 'TERM', [38, 42]), ('모토로라 레이저 M', 'ARTIFACT', [0, 10])),
-    #          (('스마트폰', 'TERM', [38, 42]), ('모토로라 모빌리티', 'ORGANIZATION', [12, 21])),
-    #          (('스마트폰', 'TERM', [38, 42]), ('안드로이드', 'TERM', [32, 37]))]
-    #     """
-    #     # 너무 긴 문장의 경우 500자 이내로 자름
-    #     if len(sentence) >= 500:
-    #         sentence = sentence[:499]
-
-    #     ent_list = self.ner(sentence)
-
-    #     pairs = list(permutations(ent_list, 2))
-
-    #     return pairs
-
-    # def get_all_inputs(self, sentence: str) -> list:
-    #     """ 주어진 문장에서 관계 추출 모델에 통과시킬 수 있는 모든 input의 리스트를 반환하는 함수.
-
-    #     Example:
-    #         sentence = '모토로라 레이저 M는 모토로라 모빌리티에서 제조/판매하는 안드로이드 스마트폰이다.'
-
-    #     Return:
-    #         [['모토로라 레이저 M는 모토로라 모빌리티에서 제조/판매하는 안드로이드 스마트폰이다.', [0, 10], [12, 21]],
-    #         ['모토로라 레이저 M는 모토로라 모빌리티에서 제조/판매하는 안드로이드 스마트폰이다.', [0, 10], [32, 37]],
-    #         ..., ]
-    #     """
-    #     pairs = self.get_all_entity_pairs(sentence)
-    #     return [[sentence, ent_subj[2], ent_obj[2]] for ent_subj, ent_obj in pairs]
 
     def entity_markers_added(
         self, sentence: str, subj_range: list, obj_range: list
@@ -400,3 +375,195 @@ class KorRE:
 
                 else:
                     return []
+
+
+class KingKorre(L.LightningModule):
+    def __init__(
+        self,
+        model_path: str = None,
+        rel2id_path: str = "gpt_relationships_only_person.json",
+        retrain: bool = True,
+        mode: str = "max",
+        bert_model="datawhales/korean-relation-extraction",
+        n_classes=65,
+        max_token_len=512,
+        max_acc_threshold=0.6,
+    ):
+        super().__init__()
+        self.model_path = model_path
+        self.bert_model = bert_model
+        self.n_class = n_classes
+        self.max_token_len = max_token_len
+        self.max_acc_threshold = max_acc_threshold
+        self.rel2id_path = rel2id_path
+        with open(rel2id_path, "r", encoding="utf-8-sig") as f:
+            self.label2class = json.load(f)
+        # sort label by its key, with dictionary order
+        label_list = [key for key in sorted(self.label2class.keys())]
+        self.id2label = {i: label for i, label in enumerate(label_list)}
+        self.label2id = {label: i for i, label in enumerate(label_list)}
+
+        self.mode = mode
+        self.args = easydict.EasyDict(
+            {
+                "bert_model": "datawhales/korean-relation-extraction",
+                "mode": "ALLCC",
+                "n_class": 65,
+                "max_token_len": 512,
+                "max_acc_threshold": 0.6,
+            }
+        )
+
+        self.tokenizer = BertTokenizer.from_pretrained(
+            "datawhales/korean-relation-extraction"
+        )
+
+        # Add entity markers tokens
+        if retrain:
+            special_tokens_dict = {
+                "additional_special_tokens": ["[E1]", "[/E1]", "[E2]", "[/E2]"]
+            }
+            num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
+
+        self.trained_model = self.__get_korre_model()
+
+        # relation id to label
+        with open(rel2id_path, "r", encoding="utf-8") as f:
+            self.relid2label = json.load(f)
+
+        # relation list
+        self.relation_list = list(self.relid2label.keys())
+
+    def __get_korre_model(self):
+        """Load the pre-trained Korean relation extraction model."""
+        if not os.path.exists("./pretrained_weight"):
+            os.mkdir("./pretrained_weight")
+
+        pretrained_weight = "./pretrained_weight/pytorch_model.bin"
+
+        if not os.path.exists(pretrained_weight):
+            url = "https://huggingface.co/datawhales/korean-relation-extraction/resolve/main/pytorch_model.bin"
+            wget.download(url, out=pretrained_weight)
+
+        trained_model = BertModel.from_pretrained(self.bert_model, return_dict=True)
+        self.tokenizer = BertTokenizer.from_pretrained(self.bert_model)
+        trained_model.load_state_dict(torch.load(pretrained_weight), strict=False)
+        self.pretrained_config = trained_model.config
+
+        # Define a separate classifier layer
+        self.classifier = nn.Linear(trained_model.config.hidden_size, self.n_class)
+
+        trained_model.eval()
+
+        return trained_model
+
+    def forward(self, input_ids, attention_mask):
+        """
+        Outputs the logits for the input_ids and attention_mask. the input_ids
+        should have the entity markers tokens ([E1], [/E1], [E2], [/E2]) added.
+
+
+        Args:
+            input_ids (torch.Tensor): The input tensor containing the token ids.
+            (batch_size, seq_len)
+            attention_mask (torch.Tensor): The attention mask tensor. (batch_size, seq_len)
+
+        Raises:
+            ValueError:
+
+        Returns:
+            torch.Tensor: The logits for the input_ids and attention_mask.
+            the tensor is (batch_size, n_class).
+        """
+        bert_outputs = self.trained_model(input_ids, attention_mask=attention_mask)
+        last_hidden_state = bert_outputs.last_hidden_state
+
+        if self.mode == "max":
+            # Max pooling
+            pooled_output, _ = torch.max(last_hidden_state, dim=1)
+        elif self.mode == "mean":
+            # Mean pooling
+            pooled_output = torch.mean(last_hidden_state, dim=1)
+        elif self.mode == "cls":
+            # CLS token pooling
+            pooled_output = last_hidden_state[:, 0, :]
+        else:
+            raise ValueError(f"Unknown mode: {self.mode}")
+
+        logits = self.classifier(pooled_output)
+
+        return logits
+
+    def training_step(
+        self,
+        batch,
+    ):
+        _, input_ids, attention_mask, labels = batch
+        logits = self.forward(input_ids, attention_mask)
+        loss = nn.CrossEntropyLoss()(logits, labels)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        return loss
+
+    def validation_step(
+        self,
+        batch,
+    ):
+        _, input_ids, attention_mask, labels = batch
+        logits = self.forward(input_ids, attention_mask)
+        loss = nn.CrossEntropyLoss()(logits, labels)
+        self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.AdamW(self.parameters(), lr=5e-5)
+        return optimizer
+
+    def predict(self, text: str, get_labels: bool = False, conf_threshold: float = 0.6):
+        """
+        Get the relationship between the heads and tails in the text. Assumes that
+        the [E1], [/E1], [E2], [/E2] tokens have been added to the text.
+
+        Args:
+            text (str): The input text with the entity markers tokens.
+            get_labels (bool): If True, return the labels of the relationships.
+            If False, return the logits. Defaults to False.
+
+        Returns:
+            logits (torch.Tensor): The logits for the input text.
+            pred_labels (List[str]): The predicted labels of the relationships.
+            only returned if get_labels is True.
+            pred_classes (List[str]): The predicted classes of the relationships.
+              only returned if get_labels is True.
+        """
+        encoding = self.tokenizer.encode_plus(
+            text,
+            add_special_tokens=True,
+            max_length=self.max_token_len,
+            return_token_type_ids=False,
+            padding="max_length",
+            truncation=True,
+            return_attention_mask=True,
+            return_tensors="pt",
+        )
+
+        input_ids = encoding["input_ids"]
+        attention_mask = encoding["attention_mask"]
+
+        logits = self.forward(input_ids, attention_mask)
+
+        if get_labels:
+            preds = torch.sigmoid(logits) > conf_threshold
+            preds = preds.cpu().detach().numpy()
+            # Get the indices of the 1s in the predictions
+            pred_indices = np.where(preds == 1)[1]
+            pred_labels = [self.id2label[i] for i in pred_indices]
+            pred_classes = [self.label2class[label] for label in pred_labels]
+            return pred_labels, pred_classes
+        return logits
+
+    def get_labels(self):
+        pass
+
+
+# if __name__ == "__main__":
+#     king = KingKorre()
