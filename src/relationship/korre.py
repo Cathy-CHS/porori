@@ -507,7 +507,7 @@ class KingKorre(L.LightningModule):
         self,
         batch,
     ):
-        input_ids, attention_mask, labels = batch
+        _, input_ids, attention_mask, labels = batch
         logits = self.forward(input_ids, attention_mask)
         loss = nn.CrossEntropyLoss()(logits, labels)
         return loss
