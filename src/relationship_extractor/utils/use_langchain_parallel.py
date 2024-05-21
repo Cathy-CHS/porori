@@ -334,7 +334,7 @@ def get_relationships_from_text(llm, texts: List[str]) -> Data:
     )
 
     with get_openai_callback() as cb:
-        res = runnable.batch([{"input": text, "examples": messages} for text in texts])
+        res = runnable.batch([{"input": text, "examples": messages} for text in texts[:2]], config={"max_concurrency": 5})
         print(cb)
     return res
 
@@ -388,29 +388,33 @@ def main(directory):
     """Process all text files in the directory."""
     # files_list = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.txt')]
     # print(f"Found {len(files_list)} files to process.")
+    file_name_list = []
     files_list = []
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith(".txt"):
+                file_name_list.append(file.split(".")[0])
                 files_list.append(os.path.join(root, file))
 
     print(f"Total .txt files found: {len(files_list)}")
 
     res = {"data": []}
-    output_file = "rel_ext_data.json"
 
-    # Set up multiprocessing
-    with Pool(processes=os.cpu_count()) as pool:
-        pool.starmap(process_file, [(file, res) for file in files_list])
+    # # Set up multiprocessing
+    # with Pool(processes=os.cpu_count()) as pool:
+    #     pool.starmap(process_file, [(file, res) for file in files_list])
     
-    export_data_list_as_json(res, output_file)
+    for i in range(len(files_list)):
+        process_file(files_list[i], res)
+        output_file = file_name_list[i] + ".json"
+        export_data_list_as_json(res, output_file)
 
 
 
 if __name__ == "__main__":
     try:
         # code that might throw
-        main('datasets/records/2대 정종')
+        main('data')
     except Exception as e:
         print(f"An error occurred: {e}")
     # main('src/datasets_part', 'src/output')
