@@ -5,6 +5,7 @@ import lightning as l
 
 from lightning.pytorch.loggers import WandbLogger
 from fire import Fire
+import os
 
 
 def main(
@@ -16,6 +17,7 @@ def main(
     valid_json_path: str = "sample_data/태조7월.json",
     batch_size: int = 16,
     max_len: int = 512,
+    save_dir: str = "trained_models",
 ):
     wandb_logger = WandbLogger(log_model=log_model, project=project)
 
@@ -33,8 +35,16 @@ def main(
     print(f"valid_dataset: {len(valid_dataset)}")
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
+    if os.path.exists(save_dir) is False:
+        os.makedirs(save_dir)
+    run_name = wandb_logger.experiment.name
+    save_path = os.path.join(save_dir, run_name)
+    if os.path.exists(save_path) is False:
+        os.makedirs(save_path)
 
-    trainer = l.Trainer(max_epochs=max_epochs, logger=wandb_logger)
+    trainer = l.Trainer(
+        max_epochs=max_epochs, logger=wandb_logger, default_root_dir=save_path
+    )
     trainer.fit(
         model=kkr,
         train_dataloaders=train_dataloader,
