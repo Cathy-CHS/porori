@@ -1,7 +1,8 @@
 from logging import getLogger, basicConfig
 import pandas as pd
 from knowledgebase.knowledgebase import Knowledgebase
-from entity import Entity
+from src.entity.entity import Entity
+import lightning as L
 
 logger = getLogger(__name__)
 
@@ -66,4 +67,5 @@ class Hodu:
         if len(candidates) == 1:
             return candidates[0]
 
-        candidate_scores = self._get_candidate_scores(entity, candidates)
+        return candidates[0]
+        # candidate_scores = self._get_candidate_scores(entity, candidates)

@@ -1,6 +1,6 @@
 import re
 from transformers import AutoTokenizer, pipeline
-from entity import Entity
+from src.entity.entity import Entity
 from typing import List
 
 
@@ -20,12 +20,10 @@ class Dotori:
     # def extract_entities(self, text):
     #     # 문장으로 나누기
     #     sentences = re.split(r'(?<=[.!?])\s+', text)
-
     #     # token화 하기 전 원본 문장의 길이를 저장하기 위한 변수
     #     start_positions = []
     #     end_positions = []
     #     offset = 0
-
     #     # 문장의 시작, 끝 위치 계산
     #     for sentence in sentences:
     #         start_positions.append(offset)
@@ -65,7 +63,6 @@ class Dotori:
         # 마지막 청크 추가
         if current_chunk:
             chunks.append(" ".join(current_chunk))
-
         entities = []
         current_text_position = 0
         for chunk in chunks:
