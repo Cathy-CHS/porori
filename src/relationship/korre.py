@@ -501,6 +501,7 @@ class KingKorre(L.LightningModule):
         _, input_ids, attention_mask, labels = batch
         logits = self.forward(input_ids, attention_mask)
         loss = nn.CrossEntropyLoss()(logits, labels)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(
@@ -510,6 +511,7 @@ class KingKorre(L.LightningModule):
         _, input_ids, attention_mask, labels = batch
         logits = self.forward(input_ids, attention_mask)
         loss = nn.CrossEntropyLoss()(logits, labels)
+        self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
     def configure_optimizers(self):
