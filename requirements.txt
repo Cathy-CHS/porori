@@ -11,3 +11,4 @@ wget
 torch
 lightning
 wandb
+fire
