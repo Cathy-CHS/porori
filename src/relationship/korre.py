@@ -513,10 +513,31 @@ class KingKorre(L.LightningModule):
         logits = self.forward(input_ids, attention_mask)
         preds = torch.argmax(logits, dim=1)
         loss = nn.CrossEntropyLoss()(logits, labels)
-        accuracy = torchmetrics.Accuracy()(preds, labels)
-        precision = torchmetrics.Precision(num_classes=2, average='macro')(preds, labels)
-        recall = torchmetrics.Recall(num_classes=2, average='macro')(preds, labels)
-        f1 = torchmetrics.F1(num_classes=2, average='macro')(preds, labels)
+
+        accuracy = torchmetrics.Accuracy(
+            "multilabel",
+            num_labels=self.n_class,
+        ).to(
+            self.device
+        )(preds, labels)
+        precision = torchmetrics.Precision(
+            "multilabel",
+            num_labels=self.n_class,
+        ).to(
+            self.device
+        )(preds, labels)
+        recall = torchmetrics.Recall(
+            "multilabel",
+            num_labels=self.n_class,
+        ).to(
+            self.device
+        )(preds, labels)
+        f1 = torchmetrics.F1Score(
+            "multilabel",
+            num_labels=self.n_class,
+        ).to(
+            self.device
+        )(preds, labels)
 
         self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         self.log("val_acc", accuracy, on_step=True, on_epoch=True, prog_bar=True)
