@@ -532,14 +532,23 @@ class KingKorre(L.LightningModule):
             self.device
         )(preds, labels)
         precision = torchmetrics.Precision(
-            num_labels=self.n_class, average="macro", task="multilabel"
-        ).to(self.device)(preds, labels)
+            "multilabel",
+            num_labels=self.n_class,
+        ).to(
+            self.device
+        )(preds, labels)
         recall = torchmetrics.Recall(
-            average="macro", task="multilabel", num_labels=self.n_class
-        ).to(self.device)(preds, labels)
+            "multilabel",
+            num_labels=self.n_class,
+        ).to(
+            self.device
+        )(preds, labels)
         f1 = torchmetrics.F1Score(
-            average="macro", task="multilabel", num_labels=self.n_class
-        ).to(self.device)(preds, labels)
+            "multilabel",
+            num_labels=self.n_class,
+        ).to(
+            self.device
+        )(preds, labels)
 
         self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         self.log("val_acc", accuracy, on_step=True, on_epoch=True, prog_bar=True)
