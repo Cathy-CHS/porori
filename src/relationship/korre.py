@@ -414,19 +414,30 @@ class KingKorre(L.LightningModule):
                 "max_acc_threshold": 0.6,
             }
         )
+        if model_path is None:
+            self.tokenizer = BertTokenizer.from_pretrained(
+                "datawhales/korean-relation-extraction"
+            )
 
-        self.tokenizer = BertTokenizer.from_pretrained(
-            "datawhales/korean-relation-extraction"
-        )
+            # Add entity markers tokens
+            if retrain:
+                special_tokens_dict = {
+                    "additional_special_tokens": ["[E1]", "[/E1]", "[E2]", "[/E2]"]
+                }
+                num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
 
-        # Add entity markers tokens
-        if retrain:
+            self.trained_model = self.__get_korre_model()
+        else:
+            self.trained_model = self.__load_model_from_local(model_path)
+            self.tokenizer = BertTokenizer.from_pretrained(
+                "datawhales/korean-relation-extraction"
+            )
+
+            # Add entity markers tokens
             special_tokens_dict = {
                 "additional_special_tokens": ["[E1]", "[/E1]", "[E2]", "[/E2]"]
             }
             num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
-
-        self.trained_model = self.__get_korre_model()
 
         # relation id to label
         with open(rel2id_path, "r", encoding="utf-8") as f:
@@ -434,6 +445,14 @@ class KingKorre(L.LightningModule):
 
         # relation list
         self.relation_list = list(self.relid2label.keys())
+
+    def __load_model_from_local(self, ckpt_path):
+        """Load the model from the local checkpoint."""
+        model = BertModel.from_pretrained(self.bert_model, return_dict=True)
+        self.tokenizer = BertTokenizer.from_pretrained(self.bert_model)
+        model.load_state_dict(torch.load(ckpt_path), strict=False)
+        model.eval()
+        return model
 
     def __get_korre_model(self):
         """Load the pre-trained Korean relation extraction model."""
