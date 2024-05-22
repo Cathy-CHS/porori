@@ -22,3 +22,7 @@ if __name__ == "__main__":
 
     # print(kkr.tokenizer.token_to_id("[CLS]"))
     # kkr.train_tokenizer(siloc_texts)
+
+    # TODO: retrain tokenizer
+    # TODO: special token definitions
+    # TODO: fix pooling mechanism of the KingKorre.
