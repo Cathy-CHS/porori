@@ -429,7 +429,16 @@ class KingKorre(L.LightningModule):
             self.trained_model = self.__get_korre_model()
         else:
             self.trained_model = self.__load_model_from_local(model_path)
-            self.tokenizer = self.trained_model.tokenizer
+            self.tokenizer = BertTokenizer.from_pretrained(
+                "datawhales/korean-relation-extraction"
+            )
+
+            # Add entity markers tokens
+            special_tokens_dict = {
+                "additional_special_tokens": ["[E1]", "[/E1]", "[E2]", "[/E2]"]
+            }
+            num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
+
         # relation id to label
         with open(rel2id_path, "r", encoding="utf-8") as f:
             self.relid2label = json.load(f)
