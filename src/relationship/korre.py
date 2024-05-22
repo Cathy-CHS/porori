@@ -511,7 +511,8 @@ class KingKorre(L.LightningModule):
     ):
         _, input_ids, attention_mask, labels = batch
         logits = self.forward(input_ids, attention_mask)
-        preds = torch.argmax(logits, dim=1)
+        preds = torch.sigmoid(logits) > self.max_acc_threshold
+
         loss = nn.CrossEntropyLoss()(logits, labels)
 
         accuracy = torchmetrics.Accuracy(
@@ -545,7 +546,13 @@ class KingKorre(L.LightningModule):
         self.log("val_rec", recall, on_step=True, on_epoch=True, prog_bar=True)
         self.log("val_f1", f1, on_step=True, on_epoch=True, prog_bar=True)
 
-        return {"val_loss": loss, "val_acc": accuracy, "val_prec": precision, "val_rec": recall, "val_f1": f1}
+        return {
+            "val_loss": loss,
+            "val_acc": accuracy,
+            "val_prec": precision,
+            "val_rec": recall,
+            "val_f1": f1,
+        }
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=5e-5)
