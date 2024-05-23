@@ -404,6 +404,7 @@ class KingKorre(L.LightningModule):
         self.id2label = {i: label for i, label in enumerate(label_list)}
         self.label2id = {label: i for i, label in enumerate(label_list)}
 
+        self.criterion = nn.BCEWithLogitsLoss()
         self.mode = mode
         self.args = easydict.EasyDict(
             {
@@ -608,7 +609,7 @@ class KingKorre(L.LightningModule):
     ):
         _, input_ids, attention_mask, labels = batch
         logits = self.forward(input_ids, attention_mask)
-        loss = nn.CrossEntropyLoss()(logits, labels)
+        loss = self.criterion(logits, labels)
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
