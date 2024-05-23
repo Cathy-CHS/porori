@@ -13,3 +13,5 @@ lightning
 wandb
 fire
 torchmetrics
+matplotlib
+plotly
