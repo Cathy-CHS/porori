@@ -14,7 +14,7 @@ def main(
     pooling_mode: str = "cls",
     rel2id_path: str = "./gpt_relationships_only_person.json",
     max_epochs: int = 3,
-    train_json_path: str = "sample_data/2대정종.json",
+    train_json_path: str = "sample_data/태조7월.json",
     valid_json_path: str = "sample_data/태조7월.json",
     batch_size: int = 16,
     max_len: int = 512,
