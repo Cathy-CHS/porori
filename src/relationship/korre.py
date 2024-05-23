@@ -27,6 +27,7 @@ import lightning as L
 from transformers import BertTokenizer, BertModel
 from typing import List, Tuple
 import torchmetrics
+import wandb
 
 
 def add_entity_markers(
@@ -405,6 +406,27 @@ class KingKorre(L.LightningModule):
         self.label2id = {label: i for i, label in enumerate(label_list)}
 
         self.criterion = nn.BCEWithLogitsLoss()
+        self.roc = torchmetrics.ROC(task="multilabel", num_labels=self.n_class).to(
+            self.device
+        )
+        self.precision_recall = torchmetrics.PrecisionRecallCurve(
+            task="multilabel", num_labels=self.n_class
+        ).to(self.device)
+        self.accuracy_metric = torchmetrics.Accuracy(
+            task="multilabel", num_labels=self.n_class
+        ).to(self.device)
+        self.precision_metric = torchmetrics.Precision(
+            task="multilabel", num_labels=self.n_class
+        ).to(self.device)
+        self.recall_metric = torchmetrics.Recall(
+            task="multilabel", num_labels=self.n_class
+        ).to(self.device)
+        self.f1_metric = torchmetrics.F1Score(
+            task="multilabel", num_labels=self.n_class
+        ).to(self.device)
+        self.confusion_matrix = torchmetrics.ConfusionMatrix(
+            task="multilabel", num_labels=self.n_class
+        ).to(self.device)
         self.mode = mode
         self.args = easydict.EasyDict(
             {
@@ -621,32 +643,27 @@ class KingKorre(L.LightningModule):
         logits = self.forward(input_ids, attention_mask)
         preds = torch.sigmoid(logits) > self.max_acc_threshold
 
-        loss = nn.CrossEntropyLoss()(logits, labels)
+        loss = self.criterion(logits, labels)
+        accuracy = self.accuracy_metric(preds, labels)
+        precision = self.precision_metric(preds, labels)
+        recall = self.recall_metric(preds, labels)
+        f1 = self.f1_metric(preds, labels)
 
-        accuracy = torchmetrics.Accuracy(
-            "multilabel",
-            num_labels=self.n_class,
-        ).to(
-            self.device
-        )(preds, labels)
-        precision = torchmetrics.Precision(
-            "multilabel",
-            num_labels=self.n_class,
-        ).to(
-            self.device
-        )(preds, labels)
-        recall = torchmetrics.Recall(
-            "multilabel",
-            num_labels=self.n_class,
-        ).to(
-            self.device
-        )(preds, labels)
-        f1 = torchmetrics.F1Score(
-            "multilabel",
-            num_labels=self.n_class,
-        ).to(
-            self.device
-        )(preds, labels)
+        # roc curve
+        # change dtype
+        labels = labels.to(torch.int)
+        roc = self.roc.update(torch.sigmoid(logits), labels)
+        fig, _ = self.roc.plot()
+        wandb.log({"val ROC": fig})
+
+        # precition recall
+        precision_recall = self.precision_recall.update(preds, labels)
+        fig, _ = self.precision_recall.plot()
+        wandb.log({"val Precision Recall": fig})
+        # confusion matrix
+        cm = self.confusion_matrix.update(preds, labels)
+        fig, _ = self.confusion_matrix.plot()
+        wandb.log({"val Confusion Matrix": fig})
 
         self.log("val_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         self.log("val_acc", accuracy, on_step=True, on_epoch=True, prog_bar=True)
