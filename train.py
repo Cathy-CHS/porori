@@ -11,6 +11,7 @@ import os
 def main(
     project: str = "KingKorre",
     log_model: str = "all",
+    pooling_mode: str = "cls",
     rel2id_path: str = "./gpt_relationships_only_person.json",
     max_epochs: int = 3,
     train_json_path: str = "sample_data/2대정종.json",
@@ -21,7 +22,9 @@ def main(
 ):
     wandb_logger = WandbLogger(log_model=log_model, project=project)
 
-    kkr = KingKorre(rel2id_path=rel2id_path, max_token_len=max_len)
+    kkr = KingKorre(
+        rel2id_path=rel2id_path, max_token_len=max_len, pooling_mode=pooling_mode
+    )
     tokenizer = kkr.tokenizer
     train_json_path = train_json_path
     valid_json_path = valid_json_path
@@ -54,4 +57,4 @@ def main(
 
 if __name__ == "__main__":
     Fire(main)
-    # example usage: python train.py --project "KingKorre" --log_model "all" --rel2id_path "./gpt_relationships_only_person.json" --max_epochs 10 --train_json_path "sample_data/2대정종.json" --valid_json_path "sample_data/태조7월.json" --batch_size 16 --max_len 512
+    # example usage: python3 train.py --project "KingKorre" --log_model "all" --rel2id_path "./gpt_relationships_only_person.json" --max_epochs 10 --train_json_path "sample_data/2대정종.json" --valid_json_path "sample_data/태조7월.json" --batch_size 16 --max_len 512
