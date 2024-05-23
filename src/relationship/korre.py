@@ -459,24 +459,24 @@ class KingKorre(L.LightningModule):
         # relation list
         self.relation_list = list(self.relid2label.keys())
 
-    def train_tokenizer(self, train_files: List[str]):
-        from tokenizers.trainers import BpeTrainer
+    def train_tokenizer(self, training_corpus, vocab_size=40000):
+        """
+        Train the tokenizer on the training corpus.
 
-        trainer = BpeTrainer(
-            special_tokens=[
-                "[CLS]",
-                "[E1]",
-                "[/E1]",
-                "[E2]",
-                "[/E2]",
-            ]
+        Args:
+            training_corpus (): generator of a list of strings. e.g. list of list of strings.
+        """
+        # https://huggingface.co/docs/transformers/v4.41.1/en/main_classes/tokenizer#transformers.PreTrainedTokenizerFast.train_new_from_iterator
+
+        self.tokenizer = self.tokenizer.train_new_from_iterator(
+            training_corpus, vocab_size
         )
-        self.tokenizer.train(files=train_files, trainer=trainer)
 
     def __load_model_from_local(self, ckpt_path):
         """Load the model from the local checkpoint."""
         model = BertModel.from_pretrained(self.bert_model, return_dict=True)
         self.tokenizer = BertTokenizer.from_pretrained(self.bert_model)
+
         if torch.cuda.is_available():
             model.load_state_dict(torch.load(ckpt_path))
         else:
@@ -529,6 +529,8 @@ class KingKorre(L.LightningModule):
             torch.Tensor: The logits for the input_ids and attention_mask.
             the tensor is (batch_size, n_class).
         """
+        # tokens: ["[CLS]", "[E1]", "[/E1]", "[E2]", "[/E2]"]
+        # ids: [2, 20000, 20001, 20002, 20003]
         if self.mode == "cls":
             # add [cls] token at the first position
             input_ids = torch.cat(
@@ -540,16 +542,44 @@ class KingKorre(L.LightningModule):
             )
         bert_outputs = self.trained_model(input_ids, attention_mask=attention_mask)
         last_hidden_state = bert_outputs.last_hidden_state
+        pooled_output = last_hidden_state[:, 0, :]
 
         if self.mode == "max":
-            # Max pooling
-            pooled_output, _ = torch.max(last_hidden_state, dim=1)
+            # Max pooling, take max among [E1], [/E1], [E2], [/E2] tokens
+            special_tokens_mask = (
+                input_ids.eq(20000)
+                | input_ids.eq(20001)
+                | input_ids.eq(20002)
+                | input_ids.eq(20003)
+            )
+            special_tokens_mask = special_tokens_mask.unsqueeze(-1).expand(
+                last_hidden_state.size()
+            )
+            special_tokens_embedding = last_hidden_state * special_tokens_mask.to(
+                torch.float32
+            )
+            special_tokens_embedding[special_tokens_embedding == 0] = -1e9
+            pooled_output = torch.max(special_tokens_embedding, dim=1)[0]
+
         elif self.mode == "mean":
-            # Mean pooling
-            pooled_output = torch.mean(last_hidden_state, dim=1)
-        elif self.mode == "cls":
-            # CLS token pooling
-            pooled_output = last_hidden_state[:, 0, :]
+            # Max pooling, take max among [E1], [/E1], [E2], [/E2] tokens
+            special_tokens_mask = (
+                input_ids.eq(20000)
+                | input_ids.eq(20001)
+                | input_ids.eq(20002)
+                | input_ids.eq(20003)
+            )
+            special_tokens_mask = special_tokens_mask.unsqueeze(-1).expand(
+                last_hidden_state.size()
+            )
+            special_tokens_embedding = last_hidden_state * special_tokens_mask.to(
+                torch.float32
+            )
+
+            # Count the number of special tokens per sequence
+            special_tokens_count = special_tokens_mask.to(torch.float32).sum(dim=1)
+            pooled_output = special_tokens_embedding.sum(dim=1) / special_tokens_count
+
         else:
             raise ValueError(f"Unknown mode: {self.mode}")
 
@@ -678,7 +708,3 @@ class KingKorre(L.LightningModule):
 
         label = [self.id2label[i] for i in labels]
         return [self.label2class[l] for l in label]
-
-
-# if __name__ == "__main__":
-#     king = KingKorre()
