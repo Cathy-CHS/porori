@@ -422,8 +422,15 @@ class KingKorre(L.LightningModule):
             # Add entity markers tokens
             if retrain:
                 special_tokens_dict = {
-                    "additional_special_tokens": ["[E1]", "[/E1]", "[E2]", "[/E2]"]
+                    "additional_special_tokens": [
+                        "[CLS]",
+                        "[E1]",
+                        "[/E1]",
+                        "[E2]",
+                        "[/E2]",
+                    ]
                 }
+
                 num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
 
             self.trained_model = self.__get_korre_model()
@@ -435,7 +442,13 @@ class KingKorre(L.LightningModule):
 
             # Add entity markers tokens
             special_tokens_dict = {
-                "additional_special_tokens": ["[E1]", "[/E1]", "[E2]", "[/E2]"]
+                "additional_special_tokens": [
+                    "[CLS]",
+                    "[E1]",
+                    "[/E1]",
+                    "[E2]",
+                    "[/E2]",
+                ]
             }
             num_added_toks = self.tokenizer.add_special_tokens(special_tokens_dict)
 
@@ -446,12 +459,33 @@ class KingKorre(L.LightningModule):
         # relation list
         self.relation_list = list(self.relid2label.keys())
 
+    def train_tokenizer(self, train_files: List[str]):
+        from tokenizers.trainers import BpeTrainer
+
+        trainer = BpeTrainer(
+            special_tokens=[
+                "[CLS]",
+                "[E1]",
+                "[/E1]",
+                "[E2]",
+                "[/E2]",
+            ]
+        )
+        self.tokenizer.train(files=train_files, trainer=trainer)
+
     def __load_model_from_local(self, ckpt_path):
         """Load the model from the local checkpoint."""
         model = BertModel.from_pretrained(self.bert_model, return_dict=True)
         self.tokenizer = BertTokenizer.from_pretrained(self.bert_model)
-        model.load_state_dict(torch.load(ckpt_path), strict=False)
+        if torch.cuda.is_available():
+            model.load_state_dict(torch.load(ckpt_path))
+        else:
+            model.load_state_dict(
+                torch.load(ckpt_path, map_location="cpu"), strict=False
+            )
         model.eval()
+        self.classifier = model.classifier
+
         return model
 
     def __get_korre_model(self):
@@ -495,6 +529,15 @@ class KingKorre(L.LightningModule):
             torch.Tensor: The logits for the input_ids and attention_mask.
             the tensor is (batch_size, n_class).
         """
+        if self.mode == "cls":
+            # add [cls] token at the first position
+            input_ids = torch.cat(
+                [
+                    torch.tensor([2]).to(self.device),
+                    input_ids,
+                ],
+                dim=1,
+            )
         bert_outputs = self.trained_model(input_ids, attention_mask=attention_mask)
         last_hidden_state = bert_outputs.last_hidden_state
 
@@ -620,8 +663,21 @@ class KingKorre(L.LightningModule):
             return pred_labels, pred_classes
         return logits
 
-    def get_labels(self):
-        pass
+    def parse_id2class(self, label: torch.Tensor) -> List[str]:
+        """
+        Parse the label tensor to a list of strings.
+
+        Args:
+            label (torch.Tensor): The label tensor.
+
+        Returns:
+            List[str]: The list of strings.
+        """
+        label = label.cpu().detach().numpy()
+        labels = np.where(label == 1)[0]
+
+        label = [self.id2label[i] for i in labels]
+        return [self.label2class[l] for l in label]
 
 
 # if __name__ == "__main__":
