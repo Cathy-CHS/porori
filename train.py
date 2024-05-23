@@ -22,9 +22,7 @@ def main(
 ):
     wandb_logger = WandbLogger(log_model=log_model, project=project)
 
-    kkr = KingKorre(
-        rel2id_path=rel2id_path, max_token_len=max_len, pooling_mode=pooling_mode
-    )
+    kkr = KingKorre(rel2id_path=rel2id_path, max_token_len=max_len, mode=pooling_mode)
     tokenizer = kkr.tokenizer
     train_json_path = train_json_path
     valid_json_path = valid_json_path
