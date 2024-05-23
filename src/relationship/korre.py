@@ -533,55 +533,70 @@ class KingKorre(L.LightningModule):
         # ids: [2, 20000, 20001, 20002, 20003]
         if self.mode == "cls":
             # add [cls] token at the first position
+            cls_token = torch.tensor([[2]]).to(input_ids.device)
             input_ids = torch.cat(
-                [
-                    torch.tensor([2]).to(self.device),
-                    input_ids,
-                ],
-                dim=1,
+                [cls_token.expand(input_ids.size(0), -1), input_ids], dim=1
             )
-        bert_outputs = self.trained_model(input_ids, attention_mask=attention_mask)
-        last_hidden_state = bert_outputs.last_hidden_state
-        pooled_output = last_hidden_state[:, 0, :]
+            # resize the idx, trucate the last 1 token
+            input_ids = input_ids[:, : self.max_token_len]
+            batch_size, _ = input_ids.shape
 
-        if self.mode == "max":
-            # Max pooling, take max among [E1], [/E1], [E2], [/E2] tokens
-            special_tokens_mask = (
-                input_ids.eq(20000)
-                | input_ids.eq(20001)
-                | input_ids.eq(20002)
-                | input_ids.eq(20003)
+            cls_attention = torch.ones(
+                (batch_size, 1),
+                dtype=attention_mask.dtype,
+                device=attention_mask.device,
             )
-            special_tokens_mask = special_tokens_mask.unsqueeze(-1).expand(
-                last_hidden_state.size()
-            )
-            special_tokens_embedding = last_hidden_state * special_tokens_mask.to(
-                torch.float32
-            )
-            special_tokens_embedding[special_tokens_embedding == 0] = -1e9
-            pooled_output = torch.max(special_tokens_embedding, dim=1)[0]
+            new_attention_mask = torch.cat((cls_attention, attention_mask), dim=1)
+            attention_mask = new_attention_mask[:, : self.max_token_len]
 
-        elif self.mode == "mean":
-            # Max pooling, take max among [E1], [/E1], [E2], [/E2] tokens
-            special_tokens_mask = (
-                input_ids.eq(20000)
-                | input_ids.eq(20001)
-                | input_ids.eq(20002)
-                | input_ids.eq(20003)
-            )
-            special_tokens_mask = special_tokens_mask.unsqueeze(-1).expand(
-                last_hidden_state.size()
-            )
-            special_tokens_embedding = last_hidden_state * special_tokens_mask.to(
-                torch.float32
-            )
-
-            # Count the number of special tokens per sequence
-            special_tokens_count = special_tokens_mask.to(torch.float32).sum(dim=1)
-            pooled_output = special_tokens_embedding.sum(dim=1) / special_tokens_count
-
+            bert_outputs = self.trained_model(input_ids, attention_mask=attention_mask)
+            last_hidden_state = bert_outputs.last_hidden_state
+            pooled_output = last_hidden_state[:, 0, :]
         else:
-            raise ValueError(f"Unknown mode: {self.mode}")
+            bert_outputs = self.trained_model(input_ids, attention_mask=attention_mask)
+            last_hidden_state = bert_outputs.last_hidden_state
+
+            if self.mode == "max":
+                # Max pooling, take max among [E1], [/E1], [E2], [/E2] tokens
+
+                special_tokens_mask = (
+                    input_ids.eq(20000)
+                    | input_ids.eq(20001)
+                    | input_ids.eq(20002)
+                    | input_ids.eq(20003)
+                )
+                special_tokens_mask = special_tokens_mask.unsqueeze(-1).expand(
+                    last_hidden_state.size()
+                )
+                special_tokens_embedding = last_hidden_state * special_tokens_mask.to(
+                    torch.float32
+                )
+                special_tokens_embedding[special_tokens_embedding == 0] = -1e9
+                pooled_output = torch.max(special_tokens_embedding, dim=1)[0]
+
+            elif self.mode == "mean":
+                # Max pooling, take max among [E1], [/E1], [E2], [/E2] tokens
+                special_tokens_mask = (
+                    input_ids.eq(20000)
+                    | input_ids.eq(20001)
+                    | input_ids.eq(20002)
+                    | input_ids.eq(20003)
+                )
+                special_tokens_mask = special_tokens_mask.unsqueeze(-1).expand(
+                    last_hidden_state.size()
+                )
+                special_tokens_embedding = last_hidden_state * special_tokens_mask.to(
+                    torch.float32
+                )
+
+                # Count the number of special tokens per sequence
+                special_tokens_count = special_tokens_mask.to(torch.float32).sum(dim=1)
+                pooled_output = (
+                    special_tokens_embedding.sum(dim=1) / special_tokens_count
+                )
+
+            else:
+                raise ValueError(f"Unknown mode: {self.mode}")
 
         logits = self.classifier(pooled_output)
 
