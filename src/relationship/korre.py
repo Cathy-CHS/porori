@@ -652,12 +652,13 @@ class KingKorre(L.LightningModule):
         # roc curve
         # change dtype
         labels = labels.to(torch.int)
-        roc = self.roc.update(torch.sigmoid(logits), labels)
+        logit_after_sigmoid = torch.sigmoid(logits)
+        roc = self.roc.update(logit_after_sigmoid, labels)
         fig, _ = self.roc.plot()
         wandb.log({"val ROC": fig})
 
         # precition recall
-        precision_recall = self.precision_recall.update(preds, labels)
+        precision_recall = self.precision_recall.update(logit_after_sigmoid, labels)
         fig, _ = self.precision_recall.plot()
         wandb.log({"val Precision Recall": fig})
         # confusion matrix
