@@ -20,7 +20,8 @@ def main(
     max_len: int = 512,
     save_dir: str = "trained_models",
 ):
-    wandb_logger = WandbLogger(log_model=log_model, project=project)
+    run_name = f"{project}_batch{batch_size}_pooling_{pooling_mode}_maxepochs_{max_epochs}_maxlen_{max_len}_train_{train_json_path.split('/')[-1].split('.')[0]}_valid_{valid_json_path.split('/')[-1].split('.')[0]}"
+    wandb_logger = WandbLogger(log_model=log_model, project=project, name=run_name)
 
     kkr = KingKorre(rel2id_path=rel2id_path, max_token_len=max_len, mode=pooling_mode)
     tokenizer = kkr.tokenizer
