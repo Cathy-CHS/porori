@@ -430,7 +430,9 @@ class KingKorre(L.LightningModule):
         self.mode = mode
         if self.mode == "max":
             raise NotImplementedError("max pooling is not implemented yet.")
-        elif self.mode not in ["cls", "mean"]:
+        elif self.mode == "mean":
+            raise NotImplementedError("mean pooling is not implemented yet.")
+        elif self.mode != "cls":
             raise ValueError(f"Unknown mode: {self.mode}")
         self.args = easydict.EasyDict(
             {
@@ -592,6 +594,7 @@ class KingKorre(L.LightningModule):
                     | input_ids.eq(20002)
                     | input_ids.eq(20003)
                 )
+
                 special_tokens_mask = special_tokens_mask.unsqueeze(-1).expand(
                     last_hidden_state.size()
                 )
@@ -612,6 +615,7 @@ class KingKorre(L.LightningModule):
                     | input_ids.eq(20002)
                     | input_ids.eq(20003)
                 )
+                num_special_tokens = special_tokens_mask.sum(dim=1)
                 special_tokens_mask = special_tokens_mask.unsqueeze(-1).expand(
                     last_hidden_state.size()
                 )
@@ -621,9 +625,9 @@ class KingKorre(L.LightningModule):
 
                 # Count the number of special tokens per sequence
                 special_tokens_count = special_tokens_mask.to(torch.float32).sum(dim=1)
-                pooled_output = (
-                    special_tokens_embedding.sum(dim=1) / special_tokens_count
-                )
+                pooled_output = special_tokens_embedding.sum(
+                    dim=1
+                ) / num_special_tokens.unsqueeze(-1)
 
             else:
                 raise ValueError(f"Unknown mode: {self.mode}")
