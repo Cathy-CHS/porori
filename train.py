@@ -6,6 +6,8 @@ import lightning as l
 from lightning.pytorch.loggers import WandbLogger
 from fire import Fire
 import os
+import torch
+from datetime import datetime as dt
 
 
 def main(
@@ -19,8 +21,12 @@ def main(
     batch_size: int = 16,
     max_len: int = 512,
     save_dir: str = "trained_models",
+    train_val_split: (
+        float | None
+    ) = None,  # if train_val_split is not None, then use train_json only and split it into train and valid with the ratio of train_val_split.
 ):
-    run_name = f"{project}_batch{batch_size}_pooling_{pooling_mode}_maxepochs_{max_epochs}_maxlen_{max_len}_train_{train_json_path.split('/')[-1].split('.')[0]}_valid_{valid_json_path.split('/')[-1].split('.')[0]}"
+    time_now = dt.now().strftime("%Y%m%d%H%M%S")
+    run_name = f"{project}_batch{batch_size}_pooling_{pooling_mode}_maxepochs_{max_epochs}_maxlen_{max_len}_train_{train_json_path.split('/')[-1].split('.')[0]}_valid_{valid_json_path.split('/')[-1].split('.')[0]}_trainratio_{train_val_split}_time_{time_now}"
     wandb_logger = WandbLogger(log_model=log_model, project=project, name=run_name)
 
     kkr = KingKorre(rel2id_path=rel2id_path, max_token_len=max_len, mode=pooling_mode)
@@ -30,9 +36,16 @@ def main(
     train_dataset = RelationshipExtractionDataset(
         train_json_path, tokenizer=tokenizer, max_len=512
     )
-    valid_dataset = RelationshipExtractionDataset(
-        valid_json_path, tokenizer=tokenizer, max_len=512
-    )
+    if train_val_split is not None:
+        train_size = int(train_val_split * len(train_dataset))
+        valid_size = len(train_dataset) - train_size
+        train_dataset, valid_dataset = torch.utils.data.random_split(
+            train_dataset, [train_size, valid_size]
+        )
+    else:
+        valid_dataset = RelationshipExtractionDataset(
+            valid_json_path, tokenizer=tokenizer, max_len=512
+        )
     print(f"train_dataset: {len(train_dataset)}")
     print(f"valid_dataset: {len(valid_dataset)}")
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
