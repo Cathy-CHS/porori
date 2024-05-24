@@ -428,6 +428,10 @@ class KingKorre(L.LightningModule):
             task="multilabel", num_labels=self.n_class
         ).to(self.device)
         self.mode = mode
+        if self.mode == "max":
+            raise NotImplementedError("max pooling is not implemented yet.")
+        elif self.mode not in ["cls", "mean"]:
+            raise ValueError(f"Unknown mode: {self.mode}")
         self.args = easydict.EasyDict(
             {
                 "bert_model": "datawhales/korean-relation-extraction",
@@ -594,8 +598,11 @@ class KingKorre(L.LightningModule):
                 special_tokens_embedding = last_hidden_state * special_tokens_mask.to(
                     torch.float32
                 )
-                special_tokens_embedding[special_tokens_embedding == 0] = -1e9
-                pooled_output = torch.max(special_tokens_embedding, dim=1)[0]
+                # special_tokens_embedding[special_tokens_embedding == 0] = -1e9
+                # special_tokens_norms = torch.linalg.vector_norm(special_tokens_embedding)
+                # maximum norm hidden vector of the special tokens
+
+                # pooled_output = torch.max(special_tokens_embedding, dim=1)[0]
 
             elif self.mode == "mean":
                 # Max pooling, take max among [E1], [/E1], [E2], [/E2] tokens
