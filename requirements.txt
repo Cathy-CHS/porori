@@ -15,3 +15,4 @@ fire
 torchmetrics
 matplotlib
 plotly
+python-dotenv
