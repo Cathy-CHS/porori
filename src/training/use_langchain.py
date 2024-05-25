@@ -337,9 +337,6 @@ def get_relationships_from_text(llm, texts: List[str]) -> Data:
 def main():
 
     # Testing the prompt
-    # human_input = """
-    #     사간원에서 김덕원의 일을 아뢰니, 그대로 따랐다. 우의정 민정중이 하루 전에 입시하여 말하다가, 김덕원의 일에 미치자 임금에게 빨리 대간이 아뢴 대로 따를 것을 권하고, 또 아뢰기를,"김덕원이 부지런하고 성실하여 직책을 잘 수행했다는 칭찬이 조금 있으니, 성상께서 대간의 아룀을 윤허하지 않으심은, 진실로 인재를 사랑하고 아끼는 뜻에서 나왔겠지만, 공의가 이미 발표된 뒤에는 또한 시비를 명백히 하여 악을 징계하고 선을 장려하는 터전을 삼지 않을 수 없습니다.
-    # """
 
     # We will be using tool calling mode, which
     # requires a tool calling capable model.
@@ -352,10 +349,6 @@ def main():
         verbose=True,
         api_key=os.getenv("OPENAI_API_KEY"),
     )
-
-    # 태조 실록 쭉 읽어오기
-    # 3문장 정도씩 끊기
-    # 결과 모아서 저장하기
 
     txt_path = "output.txt"
     input_batches = []
