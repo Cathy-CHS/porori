@@ -1,7 +1,7 @@
 import os, sys
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
-from relationship_extractor.relationship_extractor import Bono
+from relationship.relationship_extractor import Bono
 from typing import List, Tuple
 from entity import Entity, Linked_Entity
 from itertools import permutations
@@ -18,31 +18,22 @@ def main():
     # 2. load siloc document
     # 3. generate knowledge graph
     # out = open("relations_output.txt", "w", encoding="utf-8")
+
     # 한자 제거
     input_file = 'src/input.txt'
     neoburi = NeoBuri(input_file)
     neoburi.process_text()
 
     # 1. 한자 제거
-    input_dir = '16대 인조' #인풋 디렉토리
-    files = [os.path.join(input_dir, file) for file in os.listdir(input_dir) if file.endswith('.txt')]
+    input_dir = 'input_texts/연산 1년 1월' #인풋 디렉토리
+    files = os.listdir(input_dir)
 
-    all_processed_text = []
+    combined_text = ' '.join(files)
     
-    for input_file in files:
-        neoburi = NeoBuri(input_file)
-        processed_text = neoburi.process_text()
-        all_processed_text.append(processed_text)
-
-    combined_text = ' '.join(all_processed_text)
+    # # input_file = 'input.txt'
+    # # neoburi = NeoBuri(input_file)
+    # # processed_text = neoburi.process_text()
     print(combined_text)
-    f = open("combined_text.txt", "w", encoding="utf-8")
-    f.write(combined_text)
-    f.close()
-    
-    # input_file = 'input.txt'
-    # neoburi = NeoBuri(input_file)
-    # processed_text = neoburi.process_text()
 
     # 2. Entity extraction
 #     dotori = Dotori()
