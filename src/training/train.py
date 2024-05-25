@@ -12,6 +12,7 @@ from datetime import datetime as dt
 
 def main(
     project: str = "KingKorre",
+    gpu = 0,
     log_model: str = "all",
     pooling_mode: str = "cls",
     rel2id_path: str = "./gpt_relationships_only_person.json",
@@ -52,13 +53,14 @@ def main(
     valid_dataloader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
     if os.path.exists(save_dir) is False:
         os.makedirs(save_dir)
-    run_name = wandb_logger.experiment.name
+    
     save_path = os.path.join(save_dir, run_name)
     if os.path.exists(save_path) is False:
         os.makedirs(save_path)
-
+    
+    
     trainer = l.Trainer(
-        max_epochs=max_epochs, logger=wandb_logger, default_root_dir=save_path
+        max_epochs=max_epochs, logger=wandb_logger, default_root_dir=save_path, devices = [gpu]
     )
     trainer.fit(
         model=kkr,
