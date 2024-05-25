@@ -77,22 +77,40 @@ def combine_txt_files(input_dir, output_file):
     with open(output_file, 'w', encoding='utf-8') as file:
         file.write(combined_text)
 
-
 kings = {
-    1: "10대 연산군",
-    2: "11대 중종",
-    3: "12대 인종",
-    4: "13대 명종",
-    5: "14대 선조",
-    6: "15대 광해군중초본",
-    7: "16대 인조",
-    8: "17대 효종",
-    9: "18대 현종",
-    10: "19대 숙종"
+    1: "1대 태조",
+    2: "2대 정종",
+    3: "3대 태종",
+    4: "4대 세종",
+    5: "5대 문종",
+    6: "6대 단종",
+    7: "7대 세조",
+    8: "8대 예종",
+    9: "9대 성종",
+    10: "10대 연산군",
+    11: "11대 중종",
+    12: "12대 인종",
+    13: "13대 명종",
+    14: "14대 선조",
+    15: "15대 광해군중초본",
+    16: "16대 인조",
+    17: "17대 효종",
+    18: "18대 현종",
+    19: "19대 숙종",
+    20: "20대 경종",
+    21: "21대 영조",
+    22: "22대 정조",
+    23: "23대 순조",
+    24: "24대 헌종",
+    25: "25대 철종",
+    26: "26대 고종",
+    27: "27대 순종",
+    28: "순종부록",
+
 }
 
-# for i in range(1, 11):
-#     king_name = kings[i]
-input_dir = f'records/세종 18년'
-output_file = f'outputs/세종 18년.txt'
-combine_txt_files(input_dir, output_file)
+for i in range(1, 29):
+    king_name = kings[i]
+    input_dir = f'records/{king_name}'
+    output_file = f'outputs/{king_name}.txt'
+    combine_txt_files(input_dir, output_file)
