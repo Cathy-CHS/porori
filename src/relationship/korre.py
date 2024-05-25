@@ -562,6 +562,7 @@ class KingKorre(L.LightningModule):
         # ids: [2, 20000, 20001, 20002, 20003]
         if self.mode == "cls":
             # add [cls] token at the first position
+
             cls_token = torch.tensor([[2]]).to(input_ids.device)
             input_ids = torch.cat(
                 [cls_token.expand(input_ids.size(0), -1), input_ids], dim=1
@@ -640,6 +641,7 @@ class KingKorre(L.LightningModule):
         self,
         batch,
     ):
+        self.train()
         _, input_ids, attention_mask, labels = batch
         logits = self.forward(input_ids, attention_mask)
         loss = self.criterion(logits, labels)
@@ -650,6 +652,7 @@ class KingKorre(L.LightningModule):
         self,
         batch,
     ):
+        self.eval()
         _, input_ids, attention_mask, labels = batch
         logits = self.forward(input_ids, attention_mask)
         preds = torch.sigmoid(logits) > self.max_acc_threshold
@@ -726,7 +729,7 @@ class KingKorre(L.LightningModule):
         input_ids = encoding["input_ids"]
         attention_mask = encoding["attention_mask"]
 
-        logits = self.forward(input_ids, attention_mask)
+        logits = self.forward(input_ids.to(self.device), attention_mask.to(self.device))
 
         if get_labels:
             preds = torch.sigmoid(logits) > conf_threshold
