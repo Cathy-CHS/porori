@@ -334,7 +334,7 @@ def get_relationships_from_text(llm, texts: List[str]) -> Data:
     )
 
     with get_openai_callback() as cb:
-        res = runnable.batch([{"input": text, "examples": messages} for text in texts[:2]], config={"max_concurrency": 5})
+        res = runnable.batch([{"input": text, "examples": messages} for text in texts], config={"max_concurrency": 3})
         print(cb)
     return res
 
