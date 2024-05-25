@@ -18,11 +18,13 @@ def main():
     input_dir = 'input_texts/연산 1년 1월' #인풋 디렉토리
     files = os.listdir(input_dir)
 
-    combined_text = ' '.join(files)
-    
-    # # input_file = 'input.txt'
-    # # neoburi = NeoBuri(input_file)
-    # # processed_text = neoburi.process_text()
+    texts = []
+    for file in files:
+        f = open(file, 'r', encoding='utf-8')
+        text = f.read()
+        texts.append(text)
+
+    combined_text = ' '.join(texts)
     print(combined_text)
 
     # 2. Entity extraction
