@@ -42,7 +42,27 @@ class Dotori:
 
     #     return entities
 
-    def extract_entities(self, text):
+    def extract_entities(self, text, filtered: bool = True):
+        entity_list = self._extract_entities(text)
+        grouped = self.group_chunk(entity_list)
+
+        # for debugging
+        # out = open("entities_output.txt", "w", encoding="utf-8")
+        # for e in grouped:
+        #     out.write(str(e) + "\n")
+        # print("처리가 완료되었습니다. 결과는 {} 파일에 저장되었습니다.".format("entities_output.txt"))
+        # out.close()
+        #for debugging
+
+        if (filtered): # filter 할 경우
+            filtered = self.filter_type(grouped) 
+            entities = self.to_entity(filtered) 
+        else: # filter 안 할 경우
+            entities = self.to_entity(grouped) 
+
+        return entities
+
+    def _extract_entities(self, text):
         # 문장으로 나누기
         sentences = re.split(r"(?<=[.!?])\s+", text)
         chunks = []
@@ -130,6 +150,7 @@ class Dotori:
                 filtered_list.append(entity)
 
         return filtered_list
+        
 
 
 if __name__ == "__main__":
