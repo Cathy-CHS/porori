@@ -375,19 +375,12 @@ def process_file(file_path, res):
             ".".join(sentences[i : min(i + num_sentences_per_batch, len(sentences))])
         )
     relationships = get_relationships_from_text(llm, input_batches)
-    # output_path = os.path.join(
-    #     output_directory, os.path.basename(file_path).replace(".txt", "_processed.json")
-    # )
     res = export_data_list(relationships, res, input_batches)
-    # with open(output_path, 'w', encoding='utf-8') as f:
-    #     json.dump(relationships, f, ensure_ascii=False, indent=4)
     print(f"Output added to res")
 
 
 def main(directory):
     """Process all text files in the directory."""
-    # files_list = [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.txt')]
-    # print(f"Found {len(files_list)} files to process.")
     file_name_list = []
     files_list = []
     for root, _, files in os.walk(directory):
@@ -413,8 +406,6 @@ def main(directory):
 
 if __name__ == "__main__":
     try:
-        # code that might throw
         main('data')
     except Exception as e:
         print(f"An error occurred: {e}")
-    # main('src/datasets_part', 'src/output')
