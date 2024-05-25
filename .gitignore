@@ -5,4 +5,11 @@
 .src/relationship_extractor/__pycache__
 .relations_output.csv
 .relations_output.txt
-.
+src/datasets
+src/datasets_part
+lightning_logs/
+*/*.cache
+*.pyc
+*.bin
+data/
+wandb/

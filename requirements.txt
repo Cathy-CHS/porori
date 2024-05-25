@@ -1,0 +1,17 @@
+transformers
+datasets
+playwright
+beautifulsoup4
+
+easydict
+numpy
+pandas
+requests
+wget
+torch
+lightning
+wandb
+fire
+torchmetrics
+matplotlib
+plotly

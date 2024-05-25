@@ -3,7 +3,7 @@ import re
 class NeoBuri:
     def __init__(self, file):
         self.input_file = file
-        self.output_file = 'output.txt'
+        self.output_file = 'src/output.txt'
 
     # # 파일에서 텍스트 읽기 함수
     # def read_file(self):
@@ -28,10 +28,11 @@ class NeoBuri:
         # input.close()
         # write_file(output_file_name, processed_text)  # 결과를 새 파일에 저장
 
-        return processed_text
-
 # # 실행 코드
 # input_file_name = 'input.txt'  # 입력 파일 이름 지정
 # output_file_name = 'output.txt'  # 출력 파일 이름 설정
 
 # process_text(input_file_name, output_file_name)  # 파일 처리 실행
+# print(
+#     "처리가 완료되었습니다. 결과는 {} 파일에 저장되었습니다.".format(output_file_name)
+# )

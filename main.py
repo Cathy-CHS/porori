@@ -17,6 +17,11 @@ def main():
     # 1. load KB
     # 2. load siloc document
     # 3. generate knowledge graph
+    # out = open("relations_output.txt", "w", encoding="utf-8")
+    # 한자 제거
+    input_file = 'src/input.txt'
+    neoburi = NeoBuri(input_file)
+    neoburi.process_text()
 
     # 1. 한자 제거
     input_dir = '16대 인조' #인풋 디렉토리
