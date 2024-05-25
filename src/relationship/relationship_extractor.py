@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from entity.entity import Entity
 from itertools import permutations
-from .korre import KorRE
+from .korre import KingKorre, add_entity_markers
 from entity_extractor import Dotori
 import pandas as pd
 from tqdm import tqdm
@@ -14,7 +14,7 @@ from tqdm import tqdm
 class Bono:
     def __init__(self):
         # korre load
-        self.korre = KorRE()
+        self.korre = KingKorre()
 
     def relation_extract(
         self, document: str, entities: List[Entity], max_length: int
@@ -100,7 +100,7 @@ class Bono:
         obj_range = [tail["start"], tail["end"]]
 
         # Using markers to enhance the relation extraction
-        marked_sentence = self.korre.entity_markers_added(
+        marked_sentence = add_entity_markers(
             document, subj_range, obj_range
         )
         print(marked_sentence)
@@ -108,7 +108,7 @@ class Bono:
         print("\n tail:" + str(tail["entity"]), str(tail["start"]), str(tail["start"]))
 
         # Extract relations using the marked sentence
-        relations = self.korre.infer(marked_sentence, entity_markers_included=True)
+        relations = self.korre.predict(marked_sentence, entity_markers_included=True)
 
         # Convert the relation ID to relation name and map it with entities
         return [(head["entity"], tail["entity"], rel) for _, _, rel in relations]

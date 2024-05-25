@@ -5,13 +5,11 @@ from relationship.relationship_extractor import Bono
 from typing import List, Tuple
 from entity.entity import Entity, Linked_Entity
 from itertools import permutations
-from relationship.korre import KorRE
 from entity_extractor import Dotori
 from remove import NeoBuri
 from entity_linker.entity_linker import Hodu
 from knowledgebase.knowledgebase import EncyKoreaAPIKnowledgeBase
 from dotenv import load_dotenv
-from visual import *
 
 load_dotenv()
 def main():
@@ -28,7 +26,6 @@ def main():
         texts.append(text)
 
     combined_text = ' '.join(texts)
-    print(combined_text)
 
     #2. Entity extraction
     dotori = Dotori()
@@ -60,17 +57,17 @@ def main():
         else:
             existing_entity.add_item(e.start, e.end)
 
-    # f = open("linked_entities.txt", "w", encoding="utf-8")
-    # for e in linked_entities:
-    #     f.write(f"Entity: {e.name}, ID: {e.entity_id}")
-    # f.close()
+    f = open("linked_entities.txt", "w", encoding="utf-8")
+    for e in linked_entities:
+        f.write(f"Entity: {e.name}, ID: {e.entity_id}")
+    f.close()
 
     # 4. Relation Extraction
     bono = Bono()
     result = bono.relation_extract(combined_text, linked_entities, 1024)
 
     # 5. Construct Knowledge graph 
-    visual
+    
     
 
 

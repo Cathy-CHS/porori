@@ -385,7 +385,7 @@ class KingKorre(L.LightningModule):
         model_path: str = None,
         rel2id_path: str = "gpt_relationships_only_person.json",
         retrain: bool = True,
-        mode: str = "max",
+        mode: str = "cls",
         bert_model="datawhales/korean-relation-extraction",
         n_classes=65,
         max_token_len=512,
