@@ -5,7 +5,7 @@ from relationship_extractor.relationship_extractor import Bono
 from typing import List, Tuple
 from entity import Entity, Linked_Entity
 from itertools import permutations
-from relationship_extractor.korre import KorRE
+from relationship.korre import KorRE
 from entity_extractor import Dotori
 from remove import NeoBuri
 from entity_linker.entity_linker import Hodu
