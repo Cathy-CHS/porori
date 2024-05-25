@@ -739,7 +739,7 @@ class KingKorre(L.LightningModule):
             pred_labels = [self.id2label[i] for i in pred_indices]
             pred_classes = [self.label2class[label] for label in pred_labels]
             return pred_labels, pred_classes
-        return logits
+        return torch.sigmoid(logits)
 
     def parse_id2class(self, label: torch.Tensor) -> List[str]:
         """

@@ -57,26 +57,26 @@ class Bono:
         # for debugging
         # out = open("relations_output.txt", "w", encoding="utf-8")
         stringed_result = []
-        # heads = []
-        # tails = []
-        # relations = []
-        # for e in result_relations:
-        #     heads.append(e[0])
-        #     tails.append(e[1])
-        #     relations.append(e[2])
-        #     # out.write(str(e[0]), str(e[1]), e[2] + "\n")
-        #     print(str(e[0]), str(e[1]), e[2])
-        #     print(e)
+        heads = []
+        tails = []
+        relations = []
+        for e in result_relations:
+            heads.append(e[0])
+            tails.append(e[1])
+            relations.append(e[2])
+            # out.write(str(e[0]), str(e[1]), e[2] + "\n")
+            # print(str(e[0]), str(e[1]), e[2])
+            # print(e)
 
-        # stringe_result_df = pd.DataFrame(
-        #     {"head": heads, "tail": tails, "relation": relations}
-        # )
-        # stringe_result_df.to_csv("relations_output.csv", index=False)
-        # print(
-        #     "처리가 완료되었습니다. 결과는 {} 파일에 저장되었습니다.".format(
-        #         "relations_output.csv"
-        #     )
-        # )
+        stringe_result_df = pd.DataFrame(
+            {"head": heads, "tail": tails, "relation": relations}
+        )
+        stringe_result_df.to_csv("relations_output.csv", index=False)
+        print(
+            "처리가 완료되었습니다. 결과는 {} 파일에 저장되었습니다.".format(
+                "relations_output.csv"
+            )
+        )
         # out.close()
 
         # for debugging
@@ -98,14 +98,15 @@ class Bono:
         #     if (item[1] < chunk_end_idx) and (item[0] >= chunk_start_idx)
         # ]
 
-        entities_in_chunk = {
-            entity.name: [
+        entities_in_chunk = {}
+        for entity in entities:
+            entity_in_chunk = [
                 (item[0] - chunk_start_idx, item[1] - chunk_start_idx)
                 for item in entity.items
                 if ((item[1] < chunk_end_idx) and (item[0] >= chunk_start_idx))
             ]
-            for entity in entities
-        }
+            if len(entity_in_chunk) > 0:
+                entities_in_chunk[entity.name] = entity_in_chunk
 
         # adjusted_entities = [
         #     {
@@ -133,6 +134,7 @@ class Bono:
         head_idx: List[Tuple[int, int]],
         tail_idx: List[Tuple[int, int]],
     ):
+        print(f"Current Head and Tails are: {head_name}, {tail_name}")
         # subj_range = [(item[0], item[1]) for item in head["entity"].items]
         # obj_range = [(item[0], item[1]) for item in tail["entity"].items]
 
@@ -147,6 +149,8 @@ class Bono:
         labels, classes = self.korre.predict(
             marked_sentence, get_labels=True, conf_threshold=self.threshold
         )
+        logits = self.korre.predict(marked_sentence, get_labels=False)
+        print("Logits: ", logits)
 
         # Convert the relation ID to relation name and map it with entities
         return [(head_name, tail_name, rel) for rel in classes]

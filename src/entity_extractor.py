@@ -17,48 +17,15 @@ class Dotori:
         self.max_tokens = max_tokens
         self.processed_entities = []
 
-    # def extract_entities(self, text):
-    #     # 문장으로 나누기
-    #     sentences = re.split(r'(?<=[.!?])\s+', text)
-    #     # token화 하기 전 원본 문장의 길이를 저장하기 위한 변수
-    #     start_positions = []
-    #     end_positions = []
-    #     offset = 0
-    #     # 문장의 시작, 끝 위치 계산
-    #     for sentence in sentences:
-    #         start_positions.append(offset)
-    #         end_positions.append(offset + len(sentence))
-    #         offset += len(sentence) + 1
-
-    #     entities = []
-    #     for start, end in zip(start_positions, end_positions):
-    #         sentence_text = text[start:end]
-    #         sentence_entities = self.pipe(sentence_text)
-    #         for entity in sentence_entities:
-    #             # 시작, 끝 위치 조정
-    #             entity['start'] += start
-    #             entity['end'] += start
-    #             entities.append(entity)
-
-    #     return entities
-
     def extract_entities(self, text, filtered: bool = True):
         entity_list = self._extract_entities(text)
         grouped = self.group_chunk(entity_list)
 
-        # for debugging
-        # out = open("entities_output.txt", "w", encoding="utf-8")
-        # for e in grouped:
-        #     out.write(str(e) + "\n")
-        # print("처리가 완료되었습니다. 결과는 {} 파일에 저장되었습니다.".format("entities_output.txt"))
-        # out.close()
-        #for debugging
-
-        if (filtered): # filter 할 경우
-            filtered = self.filter_type(grouped) 
-            entities = self.to_entity(filtered) 
-        else: # filter 안 할 경우
-            entities = self.to_entity(grouped) 
+        if filtered:  # filter 할 경우
+            filtered = self.filter_type(grouped)
+            entities = self.to_entity(filtered)
+        else:  # filter 안 할 경우
+            entities = self.to_entity(grouped)
 
         return entities
 
@@ -85,9 +52,22 @@ class Dotori:
             chunks.append(" ".join(current_chunk))
         entities = []
         current_text_position = 0
+
         for chunk in chunks:
             chunk_entities = self.pipe(chunk)
-            # entities.extend(chunk_entities)
+
+            if "임금" in chunk:
+                chunk_entities.append(
+                    {
+                        "entity": "PS",
+                        "word": "임금",
+                        "start": chunk.index("임금") + current_text_position,
+                        "end": chunk.index("임금")
+                        + current_text_position
+                        + len("임금"),
+                    }
+                )
+
             entities.extend(
                 {
                     "entity": entity["entity"],
@@ -150,7 +130,6 @@ class Dotori:
                 filtered_list.append(entity)
 
         return filtered_list
-        
 
 
 if __name__ == "__main__":

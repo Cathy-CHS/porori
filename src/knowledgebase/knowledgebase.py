@@ -172,7 +172,7 @@ class EncyKoreaAPIKnowledgeBase(Knowledgebase):
             List[EncyKoreaAPIEntity]: List of candidate entities.
         """
         url = f"https://suny.aks.ac.kr:5143/api/Article/Search/{entity.word}?page=1"
-        
+
         headers = {"accessKey": self.access_key}
         response = requests.get(url, headers=headers, timeout=5)
 
@@ -191,5 +191,5 @@ class EncyKoreaAPIKnowledgeBase(Knowledgebase):
             entities.append(entity)
             if len(entities) >= self.max_candidates:
                 break
-
+        print(entities)
         return entities

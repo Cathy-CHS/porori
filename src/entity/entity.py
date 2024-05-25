@@ -1,5 +1,6 @@
 from typing import List, Union
 
+
 class Entity:
     def __init__(self, entity: str, word: str, start: int, end: int, uri=None) -> None:
 
@@ -13,6 +14,7 @@ class Entity:
     def __str__(self) -> str:
         return f"Entity: {self.entity}, Word: {self.word}, Start: {self.start}, End: {self.end}"
 
+
 class Linked_Entity:
     def __init__(self, name, entity_id):
         self.name = name
@@ -20,7 +22,7 @@ class Linked_Entity:
         self.items = []
 
     def add_item(self, start, end):
-        self.items.append({"start": start, "end": end})
+        self.items.append((start, end))
 
     def __str__(self) -> str:
         return f"Entity: {self.name}, Word: {self.entity_id}"
