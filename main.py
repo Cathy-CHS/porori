@@ -19,7 +19,7 @@ def main():
     # 3. generate knowledge graph
 
     # 1. 한자 제거
-    input_dir = 'input_texts' #인풋 디렉토리
+    input_dir = '16대 인조' #인풋 디렉토리
     files = [os.path.join(input_dir, file) for file in os.listdir(input_dir) if file.endswith('.txt')]
 
     all_processed_text = []
@@ -31,53 +31,52 @@ def main():
 
     combined_text = ' '.join(all_processed_text)
     print(combined_text)
+    f = open("combined_text.txt", "w", encoding="utf-8")
+    f.write(combined_text)
+    f.close()
     
     # input_file = 'input.txt'
     # neoburi = NeoBuri(input_file)
     # processed_text = neoburi.process_text()
 
     # 2. Entity extraction
-    dotori = Dotori()
-    entities = dotori.extract_entities(combined_text, True)
-    for e in entities:
-        print(str(e))
+#     dotori = Dotori()
+#     entities = dotori.extract_entities(combined_text, True)
+#     for e in entities:
+#         print(str(e))
 
-    # 3. Entity linking
-    kb = EncyKoreaAPIKnowledgeBase()
-    linked_entities = []
-    existing_entity = None
+#     # 3. Entity linking
+#     kb = EncyKoreaAPIKnowledgeBase()
+#     linked_entities = []
+#     existing_entity = None
 
-    hodu = Hodu(kb)
-    for e in entities:
-        result = hodu.get_id(e)
+#     hodu = Hodu(kb)
+#     for e in entities:
+#         result = hodu.get_id(e)
 
-        if result == None:
-            continue
+#         if result == None:
+#             continue
         
-        for linked_entity in linked_entities:
-            if linked_entity.entity_id == result.entity_id:
-                existing_entity = linked_entity
-                break
+#         for linked_entity in linked_entities:
+#             if linked_entity.entity_id == result.entity_id:
+#                 existing_entity = linked_entity
+#                 break
         
-        if not existing_entity:
-            new_entity = Linked_Entity(result.name, result.entity_id)
-            new_entity.add_item(e.start, e.end)
-            linked_entities.append(new_entity)
-        else:
-            existing_entity.add_item(e.start, e.end)
+#         if not existing_entity:
+#             new_entity = Linked_Entity(result.name, result.entity_id)
+#             new_entity.add_item(e.start, e.end)
+#             linked_entities.append(new_entity)
+#         else:
+#             existing_entity.add_item(e.start, e.end)
 
-    f = open("linked_entities.txt", "w", encoding="utf-8")
-    for e in linked_entities:
-        f.write(f"Entity: {e.name}, ID: {e.entity_id}")
-        print(str(e))
-        for ee in e.items:
-            print(str(ee))
-        
-    f.close()
+#     # f = open("linked_entities.txt", "w", encoding="utf-8")
+#     # for e in linked_entities:
+#     #     f.write(f"Entity: {e.name}, ID: {e.entity_id}")
+#     # f.close()
 
-    # 4. Relation Extraction
-    bono = Bono()
-    result = bono.relation_extract(combined_text, linked_entities, 1024)
+#     # 4. Relation Extraction
+#     bono = Bono()
+#     result = bono.relation_extract(combined_text, linked_entities, 1024)
     
 
 
