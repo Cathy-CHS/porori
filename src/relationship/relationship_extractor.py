@@ -43,6 +43,13 @@ class Bono:
         self, document: str, entities: List[Linked_Entity], max_length: int, dump_file: str = "relations_output.csv"
     ) -> List[Tuple[Linked_Entity, Linked_Entity, int]]:
         # permutation에 대해서 batch 처리
+        if os.path.exists(dump_file):
+            ans = input(f"Relationship {dump_file} already exists. Do you want to overwrite it? (y/n): ")
+            if ans.lower() == "y":
+                os.remove(dump_file)
+                print(f"Relationship {dump_file} removed successfully.")
+            else:
+                raise Exception(f"Relationship {dump_file} already exists. Please remove it or change the file name.")
         result_relations = []
         self.entities = entities
         self.entities_dict = {entity.entity_id: entity for entity in entities}

@@ -58,11 +58,20 @@ def save_linked_entities_to_csv(linked_entities: List[Linked_Entity], filename:s
     df.to_csv(filename, index=False, encoding='utf-8')
     print(f"Linked entities saved to {filename}")
 
+import concurrent.futures
+
+def process_entity(e, current_king="세종", hodu=None):
+    if e.word == "임금":
+        king_entity = Entity("PS", current_king, e.start, e.end)
+        return hodu.get_id(king_entity)
+    else:
+        return hodu.get_id(e)
+
 def main():
 
     # input 받아서 합치기
-    current_king = "세종"
-    input_dir = "input_texts/test"  # 인풋 디렉토리
+    current_king = "태조"
+    input_dir = "input_texts/태조7월"  # 인풋 디렉토리
     files = os.listdir(input_dir)
 
     texts = []
@@ -86,27 +95,37 @@ def main():
     existing_entity = None
 
     hodu = Hodu(kb)
-    for e in tqdm(entities, desc="Entity linking"):
-        if e.word =="임금":
-            king_entity = Entity("PS", current_king, e.start, e.end)
-            result = hodu.get_id(king_entity)
-        else:
-            result = hodu.get_id(e)
+    get_id_results = []
 
-        if result == None:
+    get_id_results = []
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit all tasks to the executor
+        futures = {executor.submit(process_entity, e, current_king, hodu): e for e in entities}
+
+        # Use tqdm to display the progress
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(entities), desc="Entity linking"):
+            try:
+                result = future.result()
+                get_id_results.append(result)
+            except Exception as exc:
+                print(f'Generated an exception: {exc}')
+                get_id_results.append(None)
+
+    entity_id_to_linked_entities = {}
+    for e, result_entity in zip(entities, get_id_results):
+        if result_entity is None:
             continue
-
-        for linked_entity in linked_entities:
-            if linked_entity.entity_id == result.entity_id:
-                existing_entity = linked_entity
-                break
-
-        if not existing_entity:
-            new_entity = Linked_Entity(result.name, result.entity_id)
-            new_entity.add_item(e.start, e.end)
-            linked_entities.append(new_entity)
+        if result_entity.entity_id not in entity_id_to_linked_entities:
+            new_linked_entity = Linked_Entity(result_entity.name, result_entity.entity_id)
+            new_linked_entity.add_item(e.start, e.end)
+            entity_id_to_linked_entities[result_entity.entity_id] = new_linked_entity
+            
         else:
-            existing_entity.add_item(e.start, e.end)
+            existing_linked_entities = entity_id_to_linked_entities[result_entity.entity_id]
+            existing_linked_entities.add_item(e.start, e.end)
+
+    linked_entities = list(entity_id_to_linked_entities.values())
 
     # f = open("linked_entities.txt", "w", encoding="utf-8")
     # for e in linked_entities:
@@ -118,11 +137,11 @@ def main():
 
     bono = Bono(kingkorre_model_path="pretrained_weight/kingkorre_all.ckpt", threshold=0.3)
     json_to_linked_entities = bono.load_linked_entities_from_json('linked_entity.json')
-    result = bono.relation_extract(combined_text, json_to_linked_entities, 512, "세종실록.csv")
-    for e in result:
-        print(e)
+    result = bono.relation_extract(combined_text, json_to_linked_entities, 512, "태조7월_test_rels.csv")
+    # for e in result:
+    #     print(e)
     # 5. Construct Knowledge graph
-    # visual(result)
+    visual(result)
 
 
 if __name__ == "__main__":
