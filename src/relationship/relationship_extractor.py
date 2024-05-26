@@ -12,6 +12,18 @@ import pandas as pd
 from tqdm import tqdm
 
 
+def load_linked_entities_from_json( filename):
+    with open(filename, 'r', encoding='utf-8') as json_file:
+        entities_list = json.load(json_file)
+    
+    linked_entities = []
+    for entity_dict in entities_list:
+        entity = Linked_Entity(entity_dict['name'], entity_dict['entity_id'])
+        entity.items = [tuple(item) for item in entity_dict['items']]
+        linked_entities.append(entity)
+    
+    return linked_entities
+
 MAX_RELATIONS_ON_MEMORY = 10000
 # https://huggingface.co/docs/transformers/en/model_doc/bert#transformers.BertModel
 class Bono:
