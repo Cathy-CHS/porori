@@ -10,10 +10,21 @@ import numpy as np
 
 # import csv
 # from entity.entity import Entity
-
+from matplotlib import font_manager
 import matplotlib.pyplot as plt
 
+font_path = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
+
+# Check if the font file exists
+if not os.path.exists(font_path):
+    raise FileNotFoundError(f"Font file not found: {font_path}")
+
+# Set the font properties
+font_prop = font_manager.FontProperties(fname=font_path)
+font_name = font_prop.get_name()
+
 plt.rcParams["font.family"] = "NanumGothic"
+plt.rcParams["axes.unicode_minus"] = False
 
 
 def read_triplets_from_csv(triplets_csv):
@@ -71,7 +82,7 @@ def plot_communities(G, communities, title, export_path=None):
     plt.close()
 
 
-def process_graph(g: nx.DiGraph, export_dir: str, king_name=None):
+def process_graph(g: nx.DiGraph, export_dir: str, king_name=None, degree_threshold=3):
     """
     1. remove nodes with degree < 3
     2. remove isolated nodes
@@ -82,9 +93,9 @@ def process_graph(g: nx.DiGraph, export_dir: str, king_name=None):
     """
     ### PREPROCESSING ###
     # 1. remove nodes with degree < 3
-    nodes_to_remove = [node for node in g.nodes if g.degree(node) < 3]
+    nodes_to_remove = [node for node in g.nodes if g.degree(node) < degree_threshold]
     g.remove_nodes_from(nodes_to_remove)
-    print(f"Removed {len(nodes_to_remove)} nodes with degree < 3")
+    print(f"Removed {len(nodes_to_remove)} nodes with degree < {degree_threshold}")
     # 2. remove isolated nodes
     isolated_nodes = list(nx.isolates(g))
     g.remove_nodes_from(isolated_nodes)
@@ -252,10 +263,14 @@ def process_graph(g: nx.DiGraph, export_dir: str, king_name=None):
 
 
 def analyze_graph(
-    entities_json: str, triplets_csv: str, export_dir: str, king_name=None
+    entities_json: str,
+    triplets_csv: str,
+    export_dir: str,
+    king_name=None,
+    degree_threshold=3,
 ):
     G = load_graph(entities_json, triplets_csv)
-    process_graph(G, export_dir, king_name)
+    process_graph(G, export_dir, king_name, degree_threshold=degree_threshold)
 
 
 def plot_king_ppr(G, king_id, alpha=0.85):
@@ -268,16 +283,16 @@ def visualize_graph(G, output_dir="output", siloc_title="1597 Sunjo"):
     # plt.rc("font", family=fontprop.get_name())
 
     # 엣지 라벨을 포함한 그래프 그리기
-    pos = nx.spring_layout(G)
+    pos = nx.spring_layout(G, 1)
     plt.figure(figsize=(12, 8))
 
     nx.draw(
         G,
         pos,
-        with_labels=True,
-        node_size=3000,
+        with_labels=False,
+        node_size=150,
         node_color="lightblue",
-        font_size=10,
+        font_size=7,
         font_weight="bold",
         arrows=False,
         edge_color="gray",
@@ -285,18 +300,22 @@ def visualize_graph(G, output_dir="output", siloc_title="1597 Sunjo"):
         # font_family=fontprop.get_name(),
     )
 
+    # Add node labels with names
+    labels = {node: data["name"] for node, data in G.nodes(data=True)}
+    nx.draw_networkx_labels(G, pos, labels=labels, font_family=font_name)
     # 엣지 라벨 추가
     edge_labels = {
         (head, tail): relation for head, tail, relation in G.edges(data="relationship")
     }
 
-    nx.draw_networkx_edge_labels(
-        G,
-        pos,
-        edge_labels=edge_labels,
-        font_color="red",
-        # font_family=fontprop.get_name(),
-    )
+    # nx.draw_networkx_edge_labels(
+    #     G,
+    #     pos,
+    #     edge_labels=edge_labels,
+    #     font_color="red",
+    #     font_family=font_name,
+    #     font_size=7,
+    # )
 
     plt.title(
         f"Knowledge Graph for {siloc_title}",
