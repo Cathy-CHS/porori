@@ -2,10 +2,53 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import networkx as nx
 import os
-
+import csv
+import json
+from relationship.relationship_extractor import load_linked_entities_from_json
+import pandas as pd
 # import csv
 # from entity.entity import Entity
 
+def read_triplets_from_csv(triplets_csv):
+    triplets = pd.read_csv(triplets_csv)
+    return [(row['head'], row['tail'], row['relation']) for index, row in triplets.iterrows()]
+
+def load_graph(entities_json, triplets_csv):
+    # read entities
+    linked_entities = []
+    json_to_linked_entities = load_linked_entities_from_json('entities.json')
+
+    # read triplets
+    triplets = read_triplets_from_csv(triplets_csv)
+
+
+
+    # construct networkx directed graph with edge attributes
+    
+    data = []
+    with open(csv_path, newline="", encoding="utf-8") as csvfile:
+        reader = csv.reader(csvfile)
+        next(reader)  # 첫 번째 행 (헤더) 건너뛰기
+        for row in reader:
+            head_str, tail_str, relation = row
+            head = parse_entity(head_str)
+            tail = parse_entity(tail_str)
+            data.append((head, tail, relation))
+    return data
+
+
+def process_graph(g):
+    """
+    1. remove nodes with degree < 3
+    2. remove isolated nodes
+    3. remove self loops
+
+    -> results
+
+
+    """
+    
+    pass
 
 def visual(data, output_path="graph.png"):
     # font_path = os.path.join("fonts", "NANUMGOTHIC.TTF")  # 한국어 폰트 파일 경로
