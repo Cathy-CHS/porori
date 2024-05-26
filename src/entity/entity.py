@@ -26,4 +26,4 @@ class Linked_Entity:
         self.items.append((start, end))
 
     def __str__(self) -> str:
-        return f"Entity: {self.name}, Word: {self.entity_id}"
+        return f"entity: {self.name}, entity_id: {self.entity_id}"
