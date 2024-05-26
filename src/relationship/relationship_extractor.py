@@ -1,5 +1,6 @@
 from typing import List, Tuple
 import sys, os
+import json
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -21,6 +22,18 @@ class Bono:
         else:
             self.korre = KingKorre()
         self.threshold = threshold
+
+    def load_linked_entities_from_json(self, filename):
+        with open(filename, 'r', encoding='utf-8') as json_file:
+            entities_list = json.load(json_file)
+        
+        linked_entities = []
+        for entity_dict in entities_list:
+            entity = Linked_Entity(entity_dict['name'], entity_dict['entity_id'])
+            entity.items = [tuple(item) for item in entity_dict['items']]
+            linked_entities.append(entity)
+        
+        return linked_entities
 
     def relation_extract(
         self, document: str, entities: List[Entity], max_length: int

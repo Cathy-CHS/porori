@@ -1,4 +1,5 @@
 import os, sys
+import json
 
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 from relationship.relationship_extractor import Bono
@@ -11,6 +12,7 @@ from entity_linker.entity_linker import Hodu
 from knowledgebase.knowledgebase import EncyKoreaAPIKnowledgeBase
 from dotenv import load_dotenv
 from visual import visual
+
 
 load_dotenv()
 
@@ -33,8 +35,8 @@ def main():
     # 2. Entity extraction
     dotori = Dotori()
     entities = dotori.extract_entities(combined_text, True)
-    for e in entities:
-        print(str(e))
+    # for e in entities:
+    #     print(str(e))
 
     # 3. Entity linking
     kb = EncyKoreaAPIKnowledgeBase()
@@ -60,15 +62,17 @@ def main():
         else:
             existing_entity.add_item(e.start, e.end)
 
-    f = open("linked_entities.txt", "w", encoding="utf-8")
-    for e in linked_entities:
-        f.write(f"Entity: {e.name}, ID: {e.entity_id}")
-    f.close()
+    # f = open("linked_entities.txt", "w", encoding="utf-8")
+    # for e in linked_entities:
+    #     f.write(f"Entity: {e.name}, ID: {e.entity_id}")
+    # f.close()
+    hodu.save_linked_entity_to_json(linked_entity, 'linked_entity.json')
 
-    # 4. Relation Extraction\
+    # 4. Relation Extraction
 
-    bono = Bono(kingkorre_model_path="pretrained_weight/kkr_best.ckpt", threshold=0.1)
-    result = bono.relation_extract(combined_text, linked_entities, 512)
+    bono = Bono(kingkorre_model_path="pretrained_weight/kingkorre_all.ckpt", threshold=0.1)
+    json_to_linked_entities = bono.load_linked_entities_from_json('linked_entity.json')
+    result = bono.relation_extract(combined_text, json_to_linked_entities, 512)
 
     # 5. Construct Knowledge graph
     visual(result)
