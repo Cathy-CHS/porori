@@ -12,6 +12,7 @@
 Install: `bash install.sh`
 
 Run docker:
+
 ```
-docker run --gpus '"device=0"' -it --name porori_container  porori:0 /bin/bash
+
 ```
