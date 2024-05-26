@@ -75,9 +75,12 @@ def main():
 
     # input 받아서 합치기
     current_king = "선조"
-    export_path = "results/1587"
-    input_dir = "input_texts/임진왜란_5년전"  # 인풋 디렉토리
+    export_path = "results/1597"
+    input_dir = "input_texts/임진왜란_5년후"  # 인풋 디렉토리
     files = os.listdir(input_dir)
+    print("Start Processing on the following files:")
+    for file in files:
+        print(file)
     if os.path.exists(export_path):
         ans = input("이미 존재하는 폴더입니다. 덮어쓰시겠습니까? (y/n)")
         if ans == "n":
