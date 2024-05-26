@@ -11,9 +11,10 @@ from remove import NeoBuri
 from entity_linker.entity_linker import Hodu
 from knowledgebase.knowledgebase import EncyKoreaAPIKnowledgeBase
 from dotenv import load_dotenv
-from visual import visual
+
 import pandas as pd
 from tqdm import tqdm
+from time import time
 
 load_dotenv()
 
@@ -74,9 +75,9 @@ def process_entity(e, current_king="세종", hodu=None):
 def main():
 
     # input 받아서 합치기
-    current_king = "선조"
-    export_path = "results/1597"
-    input_dir = "input_texts/임진왜란_5년후"  # 인풋 디렉토리
+    current_king = "세종"
+    export_path = "results/sejong_full"
+    input_dir = "input_texts/sejong"  # 인풋 디렉토리
     files = os.listdir(input_dir)
     print("Start Processing on the following files:")
     for file in files:
@@ -87,7 +88,7 @@ def main():
             raise ValueError("프로그램 종료")
 
     os.makedirs(export_path, exist_ok=True)
-
+    start = time()
     texts = []
     for file in files:
         file_path = os.path.join(input_dir, file)
@@ -175,6 +176,8 @@ def main():
         512,
         os.path.join(export_path, "relationships.csv"),
     )
+    print(f"Relationships saved to {os.path.join(export_path, 'relationships.csv')}")
+    print(f"Processing time: {time()-start:.4f}s")
 
 
 if __name__ == "__main__":
