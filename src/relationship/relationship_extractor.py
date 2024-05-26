@@ -12,6 +12,7 @@ import pandas as pd
 from tqdm import tqdm
 
 
+MAX_RELATIONS_ON_MEMORY = 10000
 # https://huggingface.co/docs/transformers/en/model_doc/bert#transformers.BertModel
 class Bono:
     def __init__(self, kingkorre_model_path: str = None, threshold=0.8):
@@ -36,7 +37,7 @@ class Bono:
         return linked_entities
 
     def relation_extract(
-        self, document: str, entities: List[Entity], max_length: int
+        self, document: str, entities: List[Entity], max_length: int, dump_file: str = "relations_output.csv"
     ) -> List[Tuple[Entity, Entity, int]]:
         # permutation에 대해서 batch 처리
         result_relations = []
@@ -45,7 +46,7 @@ class Bono:
         current_chunk = ""
         current_chunk_start_idx = 0
 
-        for sentence in sentences:
+        for sentence in tqdm(sentences):
             if len(current_chunk) + len(sentence) + 1 <= max_length:
                 if current_chunk:
                     current_chunk += ". " + sentence
@@ -61,40 +62,76 @@ class Bono:
                 current_chunk_start_idx += len(current_chunk) + 2
                 current_chunk = sentence
 
+            # Add dumping for memory issue.
+            if len(result_relations) > MAX_RELATIONS_ON_MEMORY:
+                self.save_triplets_to_json(result_relations, dump_file)
+                result_relations = []
+            
+            
+
         # Process the last chunk
         if current_chunk:
             self._process_chunk(
                 current_chunk, current_chunk_start_idx, entities, result_relations
             )
-
+        
+        self.save_triplets_to_json(result_relations, dump_file)
+        result_relations = []
         # for debugging
         # out = open("relations_output.txt", "w", encoding="utf-8")
-        stringed_result = []
-        heads = []
-        tails = []
-        relations = []
-        for e in result_relations:
-            heads.append(e[0])
-            tails.append(e[1])
-            relations.append(e[2])
-            # out.write(str(e[0]), str(e[1]), e[2] + "\n")
-            # print(str(e[0]), str(e[1]), e[2])
-            # print(e)
+        # stringed_result = []
+        # heads = []
+        # tails = []
+        # relations = []
+        # for e in result_relations:
+        #     heads.append(e[0])
+        #     tails.append(e[1])
+        #     relations.append(e[2])
+        #     # out.write(str(e[0]), str(e[1]), e[2] + "\n")
+        #     # print(str(e[0]), str(e[1]), e[2])
+        #     # print(e)
 
-        stringe_result_df = pd.DataFrame(
-            {"head": heads, "tail": tails, "relation": relations}
-        )
-        stringe_result_df.to_csv("relations_output.csv", index=False)
-        print(
-            "처리가 완료되었습니다. 결과는 {} 파일에 저장되었습니다.".format(
-                "relations_output.csv"
-            )
-        )
+        # stringe_result_df = pd.DataFrame(
+        #     {"head": heads, "tail": tails, "relation": relations}
+        # )
+        # stringe_result_df.to_csv("relations_output.csv", index=False)
+        # print(
+        #     "처리가 완료되었습니다. 결과는 {} 파일에 저장되었습니다.".format(
+        #         "relations_output.csv"
+        #     )
+        # )
         # out.close()
 
         # for debugging
 
         return result_relations
+    
+    def save_triplets_to_json(self, relationships, filename):
+        """
+            relationships: List[Tuple[Entity, Entity, int]].
+            After using this method, reinitialize the relationships list to [].
+        """
+        heads = []
+        tails = []
+        relations = []
+        for r in relationships:
+            heads.append(str(r[0]))
+            tails.append(str(r[1]))
+            relations.append(r[2])
+        
+        df = pd.DataFrame(
+            {
+                "head": heads,
+                "tail": tails,
+                "relation": relations
+            }
+        )
+        if os.path.exists(filename):
+            df.to_csv(filename, mode='a', header=False, index=False)
+            print(f"Relationship {filename} already exists. Appending to the file.")
+        else:
+            df.to_csv(filename, index=False)
+            print(f"Relationship csv file: {filename} created successfully.")
 
     def _process_chunk(
         self,

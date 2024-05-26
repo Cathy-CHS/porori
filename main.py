@@ -16,6 +16,22 @@ from visual import visual
 
 load_dotenv()
 
+def save_linked_entity_to_json(linked_entity_list, filename):
+        # 객체를 딕셔너리로 변환
+        
+    with open(filename, 'w', encoding='utf-8') as json_file:
+        entity_dict_list = []
+        for entity in linked_entity_list:
+            entity_dict = {
+                'name': entity.name,
+                'entity_id': entity.entity_id,
+                'items': entity.items
+            }
+            entity_dict_list.append(entity_dict)
+
+        json.dump(entity_dict_list, json_file, ensure_ascii=False, indent=4)
+    
+
 
 def main():
 
@@ -65,8 +81,8 @@ def main():
     # f = open("linked_entities.txt", "w", encoding="utf-8")
     # for e in linked_entities:
     #     f.write(f"Entity: {e.name}, ID: {e.entity_id}")
-    # f.close()
-    hodu.save_linked_entity_to_json(linked_entity, 'linked_entity.json')
+    # f.close(
+    save_linked_entity_to_json(linked_entities, 'linked_entity.json')
 
     # 4. Relation Extraction
 
