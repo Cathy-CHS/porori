@@ -2,7 +2,6 @@ transformers
 datasets
 playwright
 beautifulsoup4
-
 easydict
 numpy
 pandas
@@ -16,3 +15,5 @@ torchmetrics
 matplotlib
 plotly
 python-dotenv
+networkx
+scipy

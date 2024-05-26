@@ -171,7 +171,13 @@ class EncyKoreaAPIKnowledgeBase(Knowledgebase):
         Returns:
             List[EncyKoreaAPIEntity]: List of candidate entities.
         """
-        url = f"https://suny.aks.ac.kr:5143/api/Article/Search/{entity.word}?page=1"
+        if entity.word == "선조":
+            return [
+                EncyKoreaAPIEntity(
+                    "<b>선조</b>", "E0028912", access_key=self.access_key
+                )
+            ]
+        url = f"https://suny.aks.ac.kr:5143/api/Article/Search/{entity.word}?page=1&type=인물"
 
         headers = {"accessKey": self.access_key}
         response = requests.get(url, headers=headers, timeout=5)
