@@ -191,5 +191,5 @@ class EncyKoreaAPIKnowledgeBase(Knowledgebase):
             entities.append(entity)
             if len(entities) >= self.max_candidates:
                 break
-        print(entities)
+        # print(entities)
         return entities

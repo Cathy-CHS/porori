@@ -163,13 +163,13 @@ class Bono:
         head_idx: List[Tuple[int, int]],
         tail_idx: List[Tuple[int, int]],
     ):
-        print(f"Current Head and Tails are: {head_name}, {tail_name}")
+        # print(f"Current Head and Tails are: {head_name}, {tail_name}")
         # subj_range = [(item[0], item[1]) for item in head["entity"].items]
         # obj_range = [(item[0], item[1]) for item in tail["entity"].items]
 
         # Using markers to enhance the relation extraction
         marked_sentence = add_entity_markers(document, head_idx, tail_idx)
-        print(marked_sentence)
+        # print(marked_sentence)
         # print("\n head:" + str(head["entity"]), str(head["start"]), str(head["start"]))
         # print("\n tail:" + str(tail["entity"]), str(tail["start"]), str(tail["start"]))
 
@@ -178,8 +178,8 @@ class Bono:
         labels, classes = self.korre.predict(
             marked_sentence, get_labels=True, conf_threshold=self.threshold
         )
-        logits = self.korre.predict(marked_sentence, get_labels=False)
-        print("Logits: ", logits)
+        # logits = self.korre.predict(marked_sentence, get_labels=False)
+        # print("Logits: ", logits)
 
         # Convert the relation ID to relation name and map it with entities
         return [(head_name, tail_name, rel) for rel in classes]
