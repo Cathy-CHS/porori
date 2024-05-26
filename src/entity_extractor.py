@@ -2,14 +2,22 @@ import re
 from transformers import AutoTokenizer, pipeline
 from src.entity.entity import Entity
 from typing import List
-
+import torch
 
 class Dotori:
-    def __init__(self, max_tokens=512):
+    def __init__(self, max_tokens=512, device = None):
         # load Roberta Entity Recognition model
         # Use a pipeline as a high-level helper
+        
+        if torch.cuda.is_available():
+            self.device = 0
+        else:
+            self.device = 'cpu'
+
+        if device is not None:
+            self.device = device
         self.pipe = pipeline(
-            "token-classification", model="yongsun-yoon/klue-roberta-base-ner"
+            "token-classification", model="yongsun-yoon/klue-roberta-base-ner", device=self.device
         )
         self.tokenizer = AutoTokenizer.from_pretrained(
             "yongsun-yoon/klue-roberta-base-ner"
