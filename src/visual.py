@@ -11,6 +11,10 @@ import numpy as np
 # import csv
 # from entity.entity import Entity
 
+import matplotlib.pyplot as plt
+
+plt.rcParams["font.family"] = "NanumGothic"
+
 
 def read_triplets_from_csv(triplets_csv):
     triplets = pd.read_csv(triplets_csv)
@@ -67,7 +71,7 @@ def plot_communities(G, communities, title, export_path=None):
     plt.close()
 
 
-def process_graph(g: nx.DiGraph, export_dir: str):
+def process_graph(g: nx.DiGraph, export_dir: str, king_name=None):
     """
     1. remove nodes with degree < 3
     2. remove isolated nodes
@@ -94,7 +98,10 @@ def process_graph(g: nx.DiGraph, export_dir: str):
     print("============= Graph Analysis =============")
     print(f"Number of nodes: {g.number_of_nodes()}")
     print(f"Number of edges: {g.number_of_edges()}")
+    print(f"average degree of the graph: {np.mean([d for n, d in g.degree()])}")
 
+    # save graph fig
+    visualize_graph(g, output_dir=export_dir, siloc_title=king_name)
     # 1. pagerank
     statistics_df = pd.DataFrame()
 
@@ -161,26 +168,6 @@ def process_graph(g: nx.DiGraph, export_dir: str):
     plt.savefig(f"{export_dir}/closeness_centrality.png")
     plt.close()
 
-    df_dicts = []
-    for node in g.nodes:
-        # print(node, g.nodes[node]["name"])
-        df_dicts.append(
-            {
-                "entity_id": node,
-                "entity_name": g.nodes[node]["name"],
-                "pagerank": pagerank[node],
-                "degree_centrality": degree_centrality[node],
-                "betweenness_centrality": betweenness_centrality[node],
-                "closeness_centrality": closeness_centrality[node],
-            }
-        )
-    statistics_df = pd.DataFrame(df_dicts)
-    statistics_df.to_csv(
-        os.path.join(export_dir, "node_statistics.csv"),
-        index=False,
-        encoding="utf-8-sig",
-    )
-
     # 3. community detection
     print("============= Community Detection =============")
     # 3-1. greedy modularity communities
@@ -205,27 +192,80 @@ def process_graph(g: nx.DiGraph, export_dir: str):
     #     os.path.join(export_dir, "girvan_newman_communities.png"),
     # )
 
+    # 4 Hubs & Authority
+    print("============= Hubs & Authority =============\n")
+    hubs, authorities = nx.hits(g)
+    sorted_hubs = sorted(hubs.items(), key=lambda x: x[1], reverse=True)
+    sorted_authorities = sorted(authorities.items(), key=lambda x: x[1], reverse=True)
+    print("Top 10 nodes by hubs:")
+    print("----------------------")
+    for node, hub in sorted_hubs[:10]:
+        print(f"{g.nodes[node]['name']} (id: {node}) - hubs: {hub:.4f}")
+    print("----------------------")
+    print("Top 10 nodes by authorities:")
+    print("----------------------")
+    for node, authority in sorted_authorities[:10]:
+        print(f"{g.nodes[node]['name']} (id: {node}) - authorities: {authority:.4f}")
+    print("----------------------")
+    # 5. plot ppr with king
+    print("============= Personalized PageRank among King =============")
+    if king_name is not None:
+        king_id = None
+        for node in g.nodes:
+            if g.nodes[node]["name"] == king_name:
+                king_id = node
+                break
+        if king_id is None:
+            print(f"King {king_name} not found in the graph")
+        else:
+            print(f"Found node id of the king {king_name}")
+            personlaization = {node: 0 for node in g.nodes()}
+            personlaization[king_id] = 1
+            ppr_score = nx.pagerank(g, personalization=personlaization)
+            sorted_ppr = sorted(ppr_score.items(), key=lambda x: x[1], reverse=True)
+            print("Top 10 nodes by PPR with the king:")
+            for node, ppr in sorted_ppr[:10]:
+                print(f"{g.nodes[node]['name']} (id: {node}) - PPR: {ppr:.4f}")
 
-def analyze_graph(entities_json: str, triplets_csv: str, export_dir: str):
+    df_dicts = []
+    for node in g.nodes:
+        # print(node, g.nodes[node]["name"])
+        df_dicts.append(
+            {
+                "entity_id": node,
+                "entity_name": g.nodes[node]["name"],
+                "pagerank": pagerank[node],
+                "degree_centrality": degree_centrality[node],
+                "betweenness_centrality": betweenness_centrality[node],
+                "closeness_centrality": closeness_centrality[node],
+                "hubs": hubs[node],
+                "authorities": authorities[node],
+                "ppr_king": ppr_score[node] if king_id is not None else None,
+            }
+        )
+    statistics_df = pd.DataFrame(df_dicts)
+    statistics_df.to_csv(
+        os.path.join(export_dir, "node_statistics.csv"),
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+
+def analyze_graph(
+    entities_json: str, triplets_csv: str, export_dir: str, king_name=None
+):
     G = load_graph(entities_json, triplets_csv)
-    process_graph(G, export_dir)
+    process_graph(G, export_dir, king_name)
 
 
 def plot_king_ppr(G, king_id, alpha=0.85):
     pass
 
 
-def visual(data, output_path="graph.png"):
+def visualize_graph(G, output_dir="output", siloc_title="1597 Sunjo"):
     # font_path = os.path.join("fonts", "NANUMGOTHIC.TTF")  # 한국어 폰트 파일 경로
     # fontprop = fm.FontProperties(fname=font_path)
     # plt.rc("font", family=fontprop.get_name())
-
-    G = nx.DiGraph()
-
-    for head, tail, relation in data:
-        G.add_node(head)
-        G.add_node(tail)
-        G.add_edge(head, tail, label=relation)
 
     # 엣지 라벨을 포함한 그래프 그리기
     pos = nx.spring_layout(G)
@@ -246,7 +286,10 @@ def visual(data, output_path="graph.png"):
     )
 
     # 엣지 라벨 추가
-    edge_labels = {(head, tail): relation for head, tail, relation in data}
+    edge_labels = {
+        (head, tail): relation for head, tail, relation in G.edges(data="relationship")
+    }
+
     nx.draw_networkx_edge_labels(
         G,
         pos,
@@ -256,11 +299,11 @@ def visual(data, output_path="graph.png"):
     )
 
     plt.title(
-        "Knowledge Graph",
+        f"Knowledge Graph for {siloc_title}",
         #   fontproperties=fontprop
     )
     plt.savefig(
-        "graph.png",
+        os.path.join(output_dir, f"{siloc_title}_knowledgegraph.png"),
         dpi=300,
         facecolor="white",
         edgecolor="black",
@@ -270,7 +313,7 @@ def visual(data, output_path="graph.png"):
         bbox_inches="tight",
         pad_inches=0.1,
     )
-    # plt.savefig(output_path, format="png", dpi=300)
+
     plt.show()
     plt.close()
 
