@@ -116,7 +116,7 @@ def main():
     save_linked_entities_to_csv(linked_entities, 'linked_entities.csv')
     # 4. Relation Extraction
 
-    bono = Bono(kingkorre_model_path="pretrained_weight/kingkorre_all.ckpt", threshold=0.85)
+    bono = Bono(kingkorre_model_path="pretrained_weight/kingkorre_all.ckpt", threshold=0.3)
     json_to_linked_entities = bono.load_linked_entities_from_json('linked_entity.json')
     result = bono.relation_extract(combined_text, json_to_linked_entities, 512, "세종실록.csv")
     for e in result:

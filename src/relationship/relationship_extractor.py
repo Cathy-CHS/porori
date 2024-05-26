@@ -23,6 +23,9 @@ class Bono:
         else:
             self.korre = KingKorre()
         self.threshold = threshold
+        self.entities = []
+        self.entities_dict = {}
+        
 
     def load_linked_entities_from_json(self, filename):
         with open(filename, 'r', encoding='utf-8') as json_file:
@@ -41,7 +44,9 @@ class Bono:
     ) -> List[Tuple[Linked_Entity, Linked_Entity, int]]:
         # permutation에 대해서 batch 처리
         result_relations = []
-
+        self.entities = entities
+        self.entities_dict = {entity.entity_id: entity for entity in entities}
+        print("Entity list & Entity dict constructed successfully.")
         sentences = document.split(". ")
         current_chunk = ""
         current_chunk_start_idx = 0
@@ -128,6 +133,8 @@ class Bono:
         # ]
 
         entities_in_chunk = {}
+        self.entities = entities
+        self.entities_dict = {entity.entity_id: entity for entity in entities}
         for entity in entities:
             entity_in_chunk = [
                 (item[0] - chunk_start_idx, item[1] - chunk_start_idx)
@@ -135,7 +142,7 @@ class Bono:
                 if ((item[1] < chunk_end_idx) and (item[0] >= chunk_start_idx))
             ]
             if len(entity_in_chunk) > 0:
-                entities_in_chunk[entity.name] = entity_in_chunk
+                entities_in_chunk[entity.entity_id] = entity_in_chunk
 
         # adjusted_entities = [
         #     {
@@ -148,9 +155,9 @@ class Bono:
 
         entity_pairs = list(permutations(list(entities_in_chunk.keys()), 2))
 
-        for head, tail in entity_pairs:
+        for head_id, tail_id in entity_pairs:
             relation = self._relation_extract(
-                chunk, head, tail, entities_in_chunk[head], entities_in_chunk[tail]
+                chunk, head_id, tail_id, entities_in_chunk[head_id], entities_in_chunk[tail_id]
             )
             if relation:
                 result_relations.extend(relation)
@@ -158,11 +165,11 @@ class Bono:
     def _relation_extract(
         self,
         document: str,
-        head_name: str,
-        tail_name: str,
+        head_id: str,
+        tail_id: str,
         head_idx: List[Tuple[int, int]],
         tail_idx: List[Tuple[int, int]],
-    ):
+    ) -> List[Tuple[Linked_Entity, Linked_Entity, str]]:
         # print(f"Current Head and Tails are: {head_name}, {tail_name}")
         # subj_range = [(item[0], item[1]) for item in head["entity"].items]
         # obj_range = [(item[0], item[1]) for item in tail["entity"].items]
@@ -182,7 +189,7 @@ class Bono:
         # print("Logits: ", logits)
 
         # Convert the relation ID to relation name and map it with entities
-        return [(head_name, tail_name, rel) for rel in classes]
+        return [(self.entities_dict[head_id], self.entities_dict[tail_id], rel) for rel in classes]
 
 
 if __name__ == "__main__":
