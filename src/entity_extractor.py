@@ -49,7 +49,7 @@ class Dotori:
         current_length = 0
 
         # 문장들을 적절한 크기의 청크로 합치기
-        for sentence in tqdm(sentences, desc="extracting entities from text"):
+        for sentence in sentences:
             tokens = self.tokenizer.tokenize(sentence)
             num_tokens = len(tokens)
             if current_length + num_tokens > self.max_tokens or len(current_chunk) >= 3:
@@ -65,7 +65,7 @@ class Dotori:
         entities = []
         current_text_position = 0
 
-        for chunk in chunks:
+        for chunk in tqdm(chunks, desc="extracting entities"):
             chunk_entities = self.pipe(chunk)
 
             if "임금" in chunk:
