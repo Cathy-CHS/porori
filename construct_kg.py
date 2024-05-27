@@ -77,6 +77,8 @@ def main(
     current_king="선조",
     input_dir="input_texts/sunjo_1597",
     export_path="results/sunjo_1597",
+    kingkorre_weight="pretrained_weight/kingkorre_all.ckpt",
+    kingkorre_threshold=0.4,
 ):
 
     files = os.listdir(input_dir)
@@ -162,9 +164,7 @@ def main(
     )
     # 4. Relation Extraction
 
-    bono = Bono(
-        kingkorre_model_path="pretrained_weight/kingkorre_all.ckpt", threshold=0.4
-    )
+    bono = Bono(kingkorre_model_path=kingkorre_weight, threshold=kingkorre_threshold)
     json_to_linked_entities = bono.load_linked_entities_from_json(
         os.path.join(export_path, "linked_entity.json")
     )
