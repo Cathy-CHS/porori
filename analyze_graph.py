@@ -11,6 +11,7 @@ def main(
     graph_dir="results/sunjo_1587/",
     export_dir="graph_analysis_results/sunjo_1587",
     king_name="선조",
+    degree_threshold=5,
 ):
     entities_json = os.path.join(graph_dir, "linked_entity.json")
     triplets_csv = os.path.join(graph_dir, "relationships.csv")
