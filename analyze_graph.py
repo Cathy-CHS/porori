@@ -21,7 +21,7 @@ def main(
         triplets_csv,
         export_dir=export_dir,
         king_name=king_name,
-        degree_threshold=5,
+        degree_threshold=degree_threshold,
     )
 
 

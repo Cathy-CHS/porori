@@ -12,24 +12,32 @@ import pandas as pd
 from tqdm import tqdm
 
 
-def load_linked_entities_from_json( filename):
-    with open(filename, 'r', encoding='utf-8') as json_file:
+def load_linked_entities_from_json(filename):
+    with open(filename, "r", encoding="utf-8") as json_file:
         entities_list = json.load(json_file)
-    
+
     linked_entities = []
     for entity_dict in entities_list:
-        entity = Linked_Entity(entity_dict['name'], entity_dict['entity_id'])
-        entity.items = [tuple(item) for item in entity_dict['items']]
+        entity = Linked_Entity(entity_dict["name"], entity_dict["entity_id"])
+        entity.items = [tuple(item) for item in entity_dict["items"]]
         linked_entities.append(entity)
-    
+
     return linked_entities
 
+
 MAX_RELATIONS_ON_MEMORY = 10000
+
+
 # https://huggingface.co/docs/transformers/en/model_doc/bert#transformers.BertModel
 class Bono:
     def __init__(self, kingkorre_model_path: str = None, threshold=0.8):
         # korre load
         if kingkorre_model_path:
+            print("Loading KingKorre model from local...")
+            if not os.path.exists(kingkorre_model_path):
+                raise FileNotFoundError(
+                    f"KingKorre model path {kingkorre_model_path} does not exist."
+                )
             self.korre = KingKorre.load_from_checkpoint(kingkorre_model_path)
             print("KingKorre model loaded successfully!")
         else:
@@ -37,31 +45,38 @@ class Bono:
         self.threshold = threshold
         self.entities = []
         self.entities_dict = {}
-        
 
     def load_linked_entities_from_json(self, filename):
-        with open(filename, 'r', encoding='utf-8') as json_file:
+        with open(filename, "r", encoding="utf-8") as json_file:
             entities_list = json.load(json_file)
-        
+
         linked_entities = []
         for entity_dict in entities_list:
-            entity = Linked_Entity(entity_dict['name'], entity_dict['entity_id'])
-            entity.items = [tuple(item) for item in entity_dict['items']]
+            entity = Linked_Entity(entity_dict["name"], entity_dict["entity_id"])
+            entity.items = [tuple(item) for item in entity_dict["items"]]
             linked_entities.append(entity)
-        
+
         return linked_entities
 
     def relation_extract(
-        self, document: str, entities: List[Linked_Entity], max_length: int, dump_file: str = "relations_output.csv"
+        self,
+        document: str,
+        entities: List[Linked_Entity],
+        max_length: int,
+        dump_file: str = "relations_output.csv",
     ) -> List[Tuple[Linked_Entity, Linked_Entity, int]]:
         # permutation에 대해서 batch 처리
         if os.path.exists(dump_file):
-            ans = input(f"Relationship {dump_file} already exists. Do you want to overwrite it? (y/n): ")
+            ans = input(
+                f"Relationship {dump_file} already exists. Do you want to overwrite it? (y/n): "
+            )
             if ans.lower() == "y":
                 os.remove(dump_file)
                 print(f"Relationship {dump_file} removed successfully.")
             else:
-                raise Exception(f"Relationship {dump_file} already exists. Please remove it or change the file name.")
+                raise Exception(
+                    f"Relationship {dump_file} already exists. Please remove it or change the file name."
+                )
         result_relations = []
         self.entities = entities
         self.entities_dict = {entity.entity_id: entity for entity in entities}
@@ -90,26 +105,28 @@ class Bono:
             if len(result_relations) > MAX_RELATIONS_ON_MEMORY:
                 self.save_triplets_to_json(result_relations, dump_file)
                 result_relations = []
-            
-            
 
         # Process the last chunk
         if current_chunk:
             self._process_chunk(
                 current_chunk, current_chunk_start_idx, entities, result_relations
             )
-        
+
         self.save_triplets_to_json(result_relations, dump_file)
         result_relations = []
-        
+
         return result_relations
-    
-    def save_triplets_to_json(self, relationships: List[Tuple[Linked_Entity, Linked_Entity, str]], filename:str) -> None:
+
+    def save_triplets_to_json(
+        self,
+        relationships: List[Tuple[Linked_Entity, Linked_Entity, str]],
+        filename: str,
+    ) -> None:
         """
         Description:
             Save the relationships into csv file. The columns are head_entity_id(str), tail_entity_id(str), relation(str).
             After using this method, reinitialize the relationships list to [].
-        
+
         Args:
             relationships: List[Tuple[Entity, Entity, int]].
             filename: str. The name of the file to save the relationships.
@@ -121,16 +138,12 @@ class Bono:
             heads.append(r[0].entity_id)
             tails.append(r[1].entity_id)
             relations.append(r[2])
-        
+
         df = pd.DataFrame(
-            {
-                "head_entity_id": heads,
-                "tail_entity_id": tails,
-                "relation": relations
-            }
+            {"head_entity_id": heads, "tail_entity_id": tails, "relation": relations}
         )
         if os.path.exists(filename):
-            df.to_csv(filename, mode='a', header=False, index=False)
+            df.to_csv(filename, mode="a", header=False, index=False)
             print(f"Relationship {filename} already exists. Appending to the file.")
         else:
             df.to_csv(filename, index=False)
@@ -176,7 +189,11 @@ class Bono:
 
         for head_id, tail_id in entity_pairs:
             relation = self._relation_extract(
-                chunk, head_id, tail_id, entities_in_chunk[head_id], entities_in_chunk[tail_id]
+                chunk,
+                head_id,
+                tail_id,
+                entities_in_chunk[head_id],
+                entities_in_chunk[tail_id],
             )
             if relation:
                 result_relations.extend(relation)
@@ -208,7 +225,10 @@ class Bono:
         # print("Logits: ", logits)
 
         # Convert the relation ID to relation name and map it with entities
-        return [(self.entities_dict[head_id], self.entities_dict[tail_id], rel) for rel in classes]
+        return [
+            (self.entities_dict[head_id], self.entities_dict[tail_id], rel)
+            for rel in classes
+        ]
 
 
 if __name__ == "__main__":
