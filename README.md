@@ -11,6 +11,7 @@
 
 You can reproduce the results of the paper by simply running all cells in the `main_for_submit.ipynb`
 
+You need to **use GPU**. since we will use our pretrained RE and NER model, the T4 GPU is enough. But we recommend using high RAM. so we **recommend using L4 GPU**.
 
 Since CPU of the colab is not that fast, the KG construction time can be too long in colab. So we uploaded 
 
