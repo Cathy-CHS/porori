@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 import pandas as pd
 from tqdm import tqdm
 from time import time
+from fire import Fire
 
 load_dotenv()
 
@@ -72,20 +73,20 @@ def process_entity(e, current_king="세종", hodu=None):
         return hodu.get_id(e)
 
 
-def main():
+def main(
+    current_king="선조",
+    input_dir="input_texts/sunjo_1597",
+    export_path="results/sunjo_1597",
+):
 
-    # input 받아서 합치기
-    current_king = "세종"
-    export_path = "results/sejong_full"
-    input_dir = "input_texts/sejong"  # 인풋 디렉토리
     files = os.listdir(input_dir)
     print("Start Processing on the following files:")
     for file in files:
         print(file)
     if os.path.exists(export_path):
-        ans = input("이미 존재하는 폴더입니다. 덮어쓰시겠습니까? (y/n)")
+        ans = input("The export path already exists. Do you want to overwrite? (y/n)")
         if ans == "n":
-            raise ValueError("프로그램 종료")
+            raise ValueError("Export path already exists. Exiting...")
 
     os.makedirs(export_path, exist_ok=True)
     start = time()
@@ -101,13 +102,10 @@ def main():
     # 2. Entity extraction
     dotori = Dotori()
     entities = dotori.extract_entities(combined_text, True)
-    # for e in entities:
-    #     print(str(e))
 
     # 3. Entity linking
     kb = EncyKoreaAPIKnowledgeBase()
     linked_entities = []
-    existing_entity = None
 
     hodu = Hodu(kb)
     get_id_results = []
@@ -181,4 +179,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    Fire(main)
