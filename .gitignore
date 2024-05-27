@@ -13,3 +13,4 @@ lightning_logs/
 *.bin
 data/
 wandb/
+main_for_submit.ipynb
