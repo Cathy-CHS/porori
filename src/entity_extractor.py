@@ -3,6 +3,7 @@ from transformers import AutoTokenizer, pipeline
 from src.entity.entity import Entity
 from typing import List
 import torch
+from tqdm import tqdm
 
 
 class Dotori:
@@ -48,7 +49,7 @@ class Dotori:
         current_length = 0
 
         # 문장들을 적절한 크기의 청크로 합치기
-        for sentence in sentences:
+        for sentence in tqdm(sentences, desc="extracting entities from text"):
             tokens = self.tokenizer.tokenize(sentence)
             num_tokens = len(tokens)
             if current_length + num_tokens > self.max_tokens or len(current_chunk) >= 3:
